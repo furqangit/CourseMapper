@@ -123,7 +123,6 @@ peerAssessment.prototype.editPeerReview = function (error, params, files, succes
     if (!helper.checkRequiredParams(params, ['title', 'totalMarks', 'courseId', 'userId', 'pRId'], error)) {
         return;
     }
-    console.log("_______________");
     self.getPeerReview(error,
         {
             _id: params.pRId
