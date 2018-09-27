@@ -1090,4 +1090,198 @@ router.delete('/peerassessment/:courseId/peerreviews/:id', helper.l2pAuth, helpe
         }
     )
 })
+
+
+/***************************************************************************/
+/*********************************Calibration*********************************/
+/***************************************************************************/
+/**
+ * POST
+ * create calibration
+ */
+router.post('/peerassessment/:courseId/peerreviews/:pRId/calibration', helper.l2pAuth, helper.ensureAuthenticated,
+    function (req, res, next) {
+        if (!req.user) {
+            return res.status(401).send('Unauthorized');
+        }
+
+        var c = new calibration();
+        req.body.userId = mongoose.Types.ObjectId(req.user._id);
+        req.body.username = req.user.username;
+        req.body.courseId = mongoose.Types.ObjectId(req.params.courseId);
+        req.body.reviewId = mongoose.Types.ObjectId(req.params.pRId);
+
+        c.addCalibration(
+            function (err) {
+                console.log(err);
+                res.status(200).json({
+                    result: false,
+                    errors: [err.message]
+                });
+            },
+
+            // parameters
+            req.body,
+            req.files,
+
+            function (calibration, title) {
+                res.status(200).json({
+                    result: true,
+                    calibration: calibration,
+                    title: title
+                });
+            }
+        );
+    });
+
+/**
+ * PUT
+ * edit calibration
+ */
+router.put('/peerassessment/:courseId/peerreviews/:pRId/calibration/:id', helper.l2pAuth, helper.ensureAuthenticated,
+    multipartyMiddleware,
+    function (req, res, next) {
+        if (!req.user) {
+            return res.status(401).send('Unauthorized');
+        }
+
+
+        var c = new calibration();
+        req.body.userId = mongoose.Types.ObjectId(req.user._id);
+        req.body.courseId = mongoose.Types.ObjectId(req.params.courseId);
+        req.body.pRId = mongoose.Types.ObjectId(req.params.id);
+
+        c.editCalibration(
+            function (err) {
+                console.log(err);
+                // res.status(200).json({result: false, errors: [err.message]});
+                helper.resReturn(err, res);
+            },
+
+            // parameters
+            req.body,
+            req.files,
+
+            function () {
+                res.status(200).json({
+                    result: true
+                });
+            }
+        );
+    });
+
+/**
+ * GET
+ * get calibration
+ */
+
+router.get('/peerassessment/:courseId/peerreviews/:pRId/calibration/:id', helper.l2pAuth, helper.ensureAuthenticated,
+    function (req, res, next) {
+        if (!req.user) {
+            return res.status(401).send('Unauthorized');
+        }
+
+        var c = new calibration();
+        req.body.userId = mongoose.Types.ObjectId(req.user._id);
+        req.body.courseId = mongoose.Types.ObjectId(req.params.courseId);
+        req.body.pRId = mongoose.Types.ObjectId(req.params.id);
+
+        var params = {
+            _id: mongoose.Types.ObjectId(req.params.id)
+        }
+
+        c.getCalibration(
+            function (err) {
+                console.log(err);
+                // res.status(200).json({result: false, errors: [err.message]});
+                helper.resReturn(err, res);
+            },
+
+            // parameters
+            params,
+
+            async (function (calibration) {
+                var isAdmin = await (userHelper.isCourseAuthorizedAsync({
+                    userId: req.user._id,
+                    courseId: req.params.courseId
+                }))
+                //TODO for students
+                // if (!isAdmin) {
+                //     var now = new Date()
+                //     if (!peerReview.solutionPublicationDate || now < peerReview.solutionPublicationDate) {
+                //         peerReview = peerReview.toObject()
+                //         delete peerReview.solutions
+                //     }
+                //     debug(peerReview)
+                // }
+                res.status(200).json({
+                    result: true,
+                    calibration: calibration
+                });
+            })
+        );
+    });
+
+/**
+ * GET
+ * fetch all calibrations
+ */
+router.get('/peerassessment/:courseId/peerreviews', helper.l2pAuth, helper.ensureAuthenticated, async (function (req, res) {
+    if (!req.user) {
+        return res.status(401).send('Unauthorized');
+    }
+
+    var c = new calibration();
+    req.body.courseId = mongoose.Types.ObjectId(req.params.courseId);
+    var isAdmin = await (userHelper.isCourseAuthorizedAsync({
+        userId: req.user._id,
+        courseId: req.params.courseId
+    }))
+    //TODO for students
+    // if (!isAdmin) {
+    //     req.body.publicationDate = {
+    //         "$lte": new Date()
+    //     }
+    // }
+    c.getCalibration(
+        function (err) {
+            helper.resReturn(err, res);
+        },
+        req.body,
+        function (calibrations) {
+            res.status(200).json({
+                result: true,
+                calibrations: calibrations
+            });
+        }
+    )
+}))
+
+/**
+ * DELETE
+ * delete a calibration
+ */
+router.delete('/peerassessment/:courseId/calibrations/:id', helper.l2pAuth, helper.ensureAuthenticated, function (req, res) {
+    if (!req.user) {
+        return res.status(401).send('Unauthorized');
+    }
+
+    var c = new calibration();
+    req.body.userId = mongoose.Types.ObjectId(req.user._id);
+    req.body.courseId = mongoose.Types.ObjectId(req.params.courseId);
+    req.body.cId = mongoose.Types.ObjectId(req.params.id);
+
+    c.deleteCalibration(
+        function (err) {
+            helper.resReturn(err, res);
+        },
+        req.body,
+        function (calibration) {
+            res.status(200).json({
+                result: true
+            });
+        }
+    )
+})
+
 module.exports = router;
