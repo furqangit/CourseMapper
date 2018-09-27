@@ -162,6 +162,10 @@ app.controller('PeerAssessmentController', function($scope, $http, courseService
         window.document.location = '#/cid/' + $scope.course._id + '?tab=peerAssessment&vName=viewSolutionsList';
     }
 
+    $scope.viewAllCalibrations = function(peerReviewId) {
+        window.document.location = '#/cid/' + $scope.course._id + '/?tab=peerAssessment&pRId='+peerReviewId+'&vName=viewCalibrationsList';
+    }
+
     $scope.viewReviewsList = function() {
         window.document.location = '#/cid/' + $scope.course._id + '?tab=peerAssessment&vName=viewReviewsList';
     }
@@ -238,6 +242,9 @@ app.controller('PeerAssessmentController', function($scope, $http, courseService
             }  else if($scope.vName == 'viewFeedback') {
                 $scope.currentView = 'viewFeedback.tpl'
                 $scope.manageBreadCrumb('View Feedback')
+            }  else if($scope.vName == 'viewCalibrationsList') {
+                $scope.currentView = 'seeAllCalibrations.tpl'
+                $scope.manageBreadCrumb('Calibrations')
             }
         } else {
             $scope.currentView = 'main.tpl';

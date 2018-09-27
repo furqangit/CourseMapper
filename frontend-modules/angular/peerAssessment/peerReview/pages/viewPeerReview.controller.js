@@ -85,10 +85,22 @@ app.controller('ViewPeerReviewController', function($scope, $location, $http, to
                         aTitle: 'Edit Peer Review'
                     },
                     {
+                        separator: true
+                    },
+                    {
                         clickAction: $scope.openDeleteConfirmationModal,
                         clickParams: $scope.viewReview._id,
                         title: '&nbsp;&nbsp; <i class="ionicons ion-ios-trash"></i> &nbsp; DELETE',
                         aTitle: 'Delete Peer Review'
+                    },
+                    {
+                        separator: true
+                    },
+                    {
+                        clickAction: $scope.viewAllCalibrations,
+                        clickParams: $scope.viewReview._id,
+                        title: '&nbsp;&nbsp; <i class="ionicons ion-ios-trash"></i> &nbsp; CALIBRATION',
+                        aTitle: 'Calibrations'
                     },
                     {
                         separator: true

@@ -1184,7 +1184,8 @@ router.get('/peerassessment/:courseId/peerreviews/:pRId/calibration/:id', helper
         var c = new calibration();
         req.body.userId = mongoose.Types.ObjectId(req.user._id);
         req.body.courseId = mongoose.Types.ObjectId(req.params.courseId);
-        req.body.pRId = mongoose.Types.ObjectId(req.params.id);
+        req.body.peerReviewId = mongoose.Types.ObjectId(req.params.pRId);
+        req.body.cId = mongoose.Types.ObjectId(req.params.id);
 
         var params = {
             _id: mongoose.Types.ObjectId(req.params.id)
@@ -1226,13 +1227,14 @@ router.get('/peerassessment/:courseId/peerreviews/:pRId/calibration/:id', helper
  * GET
  * fetch all calibrations
  */
-router.get('/peerassessment/:courseId/peerreviews', helper.l2pAuth, helper.ensureAuthenticated, async (function (req, res) {
+router.get('/peerassessment/:courseId/peerreviews/:pRId', helper.l2pAuth, helper.ensureAuthenticated, async (function (req, res) {
     if (!req.user) {
         return res.status(401).send('Unauthorized');
     }
 
     var c = new calibration();
     req.body.courseId = mongoose.Types.ObjectId(req.params.courseId);
+    req.body.peerReviewId = mongoose.Types.ObjectId(req.params.pRId);
     var isAdmin = await (userHelper.isCourseAuthorizedAsync({
         userId: req.user._id,
         courseId: req.params.courseId
