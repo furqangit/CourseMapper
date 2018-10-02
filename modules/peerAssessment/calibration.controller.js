@@ -12,7 +12,7 @@ var await = require('asyncawait/await');
 var _ = require('lodash');
 var fs = require('fs-extra');
 var moment = require('moment');
-
+var PeerReview = require('./models/peerReview.js');
 
 function calibration() {
 
@@ -34,7 +34,7 @@ calibration.prototype.getCalibration = function (error, params, success) {
 };
 
 calibration.prototype.getCalibrations = function (error, params, success) {
-    Calibration.find(params).sort({ dateAdded: 1 }).populate('peerReviewId').exec(function (err, docs) {
+    Calibration.find(params).sort({ dateAdded: -1}).populate('peerReviewId').exec(function (err, docs) {
         if (!err) {
             success(docs);
         } else {
@@ -112,40 +112,40 @@ calibration.prototype.deleteCalibration = function (error, params, success) {
 calibration.prototype.editCalibration = function (error, params, files, success) {
     var self = this;
 
-    if (!helper.checkRequiredParams(params, ['courseId', 'reviewId', 'userId', 'cId'], error)) {
+    if (!helper.checkRequiredParams(params, ['courseId', 'peerReviewId', 'userId', 'calibrationId'], error)) {
         return;
     }
 
     self.getCalibration(error,
-        { _id: params.cId },
-        function (calibtration) {
-            calibtration.title = params.title;
-            calibtration.teacherName = params.teacherName;
-            calibtration.teacherComments = params.teacherComments;
-            calibtration.calibrationDocuments = params.calibrationDocuments || [];
-            calibtration.isSubmitted = true;
+        { _id: params.calibrationId },
+        function (calibtrationObj) {
+            calibtrationObj.title = params.title;
+            calibtrationObj.teacherName = params.teacherName;
+            calibtrationObj.teacherComments = params.teacherComments;
+            calibtrationObj.calibrationDocuments = params.calibrationDocuments || [];
+            calibtrationObj.isSubmitted = true;
 
             if (files && files.file) {
-                var selCalibrationDocuments = null;
-                if (files.file[0] && files.file[0].selCalibrationDocuments) {
-                    selCalibrationDocuments = files.file[0].selCalibrationDocuments
+                var calibrationDocuments = null;
+                if (files.file[0] && files.file[0].calibrationDocuments) {
+                    calibrationDocuments = files.file[0].calibrationDocuments
                 }
-                if (selCalibrationDocuments && selCalibrationDocuments.constructor == Array) {
-                    for (var i in selCalibrationDocuments) {
-                        var f = selCalibrationDocuments[i];
+                if (calibrationDocuments && calibrationDocuments.constructor == Array) {
+                    for (var i in calibrationDocuments) {
+                        var f = calibrationDocuments[i];
                         self.saveResourceFile(error,
                             f,
                             'calibrationDocuments',
-                            calibration,
+                            calibtrationObj,
                             function (fn) {
                                 var duplicate = false;
-                                _.each(calibration.calibrationDocuments, function (doc) {
+                                _.each(calibtrationObj.calibrationDocuments, function (doc) {
                                     if (fn == doc) {
                                         duplicate = true;
                                     }
                                 })
                                 if (!duplicate) {
-                                    calibration.calibrationDocuments.push(fn);
+                                    calibtrationObj.calibrationDocuments.push(fn);
                                 }
                             })
                     }
@@ -164,8 +164,8 @@ calibration.prototype.editCalibration = function (error, params, files, success)
                 });
             })
 
-            console.log('Calibration', calibration);
-            calibration.save(function (err, doc) {
+            console.log('Calibration', calibtrationObj);
+            calibtrationObj.save(function (err, doc) {
                 if (err) {
                     console.log('Failed updating calibration');
                     error(err);
@@ -179,12 +179,13 @@ calibration.prototype.editCalibration = function (error, params, files, success)
 }
 
 calibration.prototype.addCalibration = function (error, params, files, success) {
+    var self = this;
     if (!helper.checkRequiredParams(params, ['courseId', 'reviewId', 'userId'], error)) {
         return;
     }
-
-    PeerReview.findOne({ _id: params.reviewId }).exec(function (err, peerReview) {
+    PeerReview.findOne({ _id: mongoose.Types.ObjectId(params.reviewId) }).exec(function (err, peerReview) {
         if (err) {
+            console.log("Error fetching peer review: ", err);
             error(err);
             return;
         }
@@ -197,68 +198,54 @@ calibration.prototype.addCalibration = function (error, params, files, success) 
         var now = new Date()
         console.log(now, peerReview.dueDate)
         //TODO here dates checks
-        if (now < peerReview.dueDate) {
-            Calibration.findOne({
+        if (now < peerReview.reviewSettings.reviewStartDate) {
+
+            var calibration = new Calibration({
+                title: params.title,
+                createdBy: mongoose.Types.ObjectId(params.userId),
                 courseId: mongoose.Types.ObjectId(params.courseId),
                 peerReviewId: mongoose.Types.ObjectId(params.reviewId),
-                createdBy: mongoose.Types.ObjectId(params.userId),
-            }).exec(function (err, doc) {
-                if (err) {
-                    error(err)
+                isSubmitted: false,
+                teacherName: params.username,
+                teacherComments: params.teacherComments
+            });
+
+            if (files && files.file) {
+                var calibrationDocuments = null;
+                if (files.file[0] && files.file[0].calibrationDocuments) {
+                    calibrationDocuments = files.file[0].calibrationDocuments;
                 }
-                if (doc) {
-                    console.log('Found Calibration: ', doc);
-                    success(doc, peerReview.title);
+            }
+            //only taking first document (no multi documents)
+            var f = calibrationDocuments[0];
+
+            self.saveResourceFile(error,
+                f,
+                'calibrationDocuments',
+                calibration,
+                function (fn) {
+                    var duplicate = false;
+                    _.each(calibrationDocuments, function (doc) {
+                        if (fn == doc) {
+                            duplicate = true;
+                        }
+                    })
+                    if (!duplicate) {
+                        calibration.calibrationDocuments.push(fn);
+                    }
+                })
+
+            calibration.save(function (err, doc) {
+                if (err) {
+                    console.log('err', err);
+                    error(err);
                 }
                 else {
-
-                    var calibration = new Calibration({
-                        title: params.title,
-                        createdBy: mongoose.Types.ObjectId(params.userId),
-                        courseId: mongoose.Types.ObjectId(params.courseId),
-                        peerReviewId: mongoose.Types.ObjectId(params.reviewId),
-                        isSubmitted: false,
-                        teacherName: params.username,
-                        teacherComments: params.teacherComments
-                    });
-
-                    if (files && files.file) {
-                        var calibrationDocuments = null;
-                        if (files.file[0] && files.file[0].calibrationDocuments) {
-                            calibrationDocuments = files.file[0].calibrationDocuments;
-                        }
-                    }
-
-                    self.saveResourceFile(error,
-                        f,
-                        'calibrationDocuments',
-                        calibration,
-                        function (fn) {
-                            var duplicate = false;
-                            _.each(calibrationDocuments, function (doc) {
-                                if (fn == doc) {
-                                    duplicate = true;
-                                }
-                            })
-                            if (!duplicate) {
-                                calibration.calibrationDocuments.push(fn);
-                            }
-                        })
-
-                    calibration.save(function (err, doc) {
-                        if (err) {
-                            console.log('err', err);
-                            error(err);
-                        }
-                        else {
-                            console.log('Calibration', doc);
-                            success(doc, peerReview.title);
-                        }
-                    });
+                    success(doc, peerReview.title);
                 }
-            })
+            });
         } else {
-            var err = new Error('Deadline has passed. Cannot submit now')
+            var err = new Error('Reviews has been started. Cannot submit now')
             error(err)
             return
         }

@@ -16,7 +16,8 @@ var calibrationSchema = new mongoose.Schema({
     isSubmitted : { type: Boolean },
     dateAdded: { type: Date },
     dateUpdated: { type: Date }
-});
+},
+{ usePushEach: true });
 
 calibrationSchema.pre('save', function(next){
     var now = new Date();

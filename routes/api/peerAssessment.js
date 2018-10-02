@@ -2,6 +2,7 @@ var express = require('express');
 var config = require('config');
 var appRoot = require('app-root-path');
 var solutions = require(appRoot + '/modules/peerAssessment/solutions.controller.js');
+var calibration = require(appRoot + '/modules/peerAssessment/calibration.controller.js');
 var peerAssessment = require(appRoot + '/modules/peerAssessment/peerAssessment.controller.js');
 var reviews = require(appRoot + '/modules/peerAssessment/reviews.controller.js');
 var rubrics = require(appRoot + '/modules/peerAssessment/rubrics.controller.js');
@@ -369,7 +370,7 @@ router.delete('/peerassessment/:courseId/peerreviews/:pRId/reviews/:id', helper.
  * GET
  * fetch all reviews for rating history
  */
-router.get('/peerassessment/:courseId/reviewsRatings', helper.l2pAuth, helper.ensureAuthenticated, async (function (req, res) {
+router.get('/peerassessment/:courseId/reviewsRatings', helper.l2pAuth, helper.ensureAuthenticated, async(function (req, res) {
     if (!req.user) {
         return res.status(401).send('Unauthorized');
     }
@@ -382,11 +383,11 @@ router.get('/peerassessment/:courseId/reviewsRatings', helper.l2pAuth, helper.en
 
     if (req.query.rName == 'ReverseReviewsRating') {
         if (req.query.cUserId)
-            
-            req.body.peerReviewId = mongoose.Types.ObjectId(req.query.peerReviewId)
-            req.body.submittedBy = mongoose.Types.ObjectId(req.query.cUserId) //Get all the revers review rating that is assigned to this user
 
-        }
+            req.body.peerReviewId = mongoose.Types.ObjectId(req.query.peerReviewId)
+        req.body.submittedBy = mongoose.Types.ObjectId(req.query.cUserId) //Get all the revers review rating that is assigned to this user
+
+    }
 
     if (req.query.rName == 'ReviewsRating') {
         if (req.query.cUserId) {
@@ -405,10 +406,12 @@ router.get('/peerassessment/:courseId/reviewsRatings', helper.l2pAuth, helper.en
             helper.resReturn(err, res);
         },
         req.body,
-        function (reviews) { res.status(200).json({
-            result: true,
-            reviews: reviews});
-    }
+        function (reviews) {
+            res.status(200).json({
+                result: true,
+                reviews: reviews
+            });
+        }
     )
     //*****************************************************//
 
@@ -421,7 +424,7 @@ router.get('/peerassessment/:courseId/reviewsRatings', helper.l2pAuth, helper.en
  * GET
  * fetch all reviews
  */
-router.get('/peerassessment/:courseId/reviews', helper.l2pAuth, helper.ensureAuthenticated, async (function (req, res) {
+router.get('/peerassessment/:courseId/reviews', helper.l2pAuth, helper.ensureAuthenticated, async(function (req, res) {
     if (!req.user) {
         return res.status(401).send('Unauthorized');
     }
@@ -465,7 +468,7 @@ router.get('/peerassessment/:courseId/reviews', helper.l2pAuth, helper.ensureAut
 
     // for lists in Assigned reviews section
     if (req.query.rName == 'RCRequestData') {
-        var isAdmin = await (userHelper.isCourseAuthorizedAsync({
+        var isAdmin = await(userHelper.isCourseAuthorizedAsync({
             userId: req.user._id,
             courseId: req.params.courseId
         }))
@@ -532,7 +535,7 @@ router.get('/peerassessment/:courseId/reviews', helper.l2pAuth, helper.ensureAut
  * fetch all reviews and send analyzed report
  * 
  */
-router.get('/peerassessment/:courseId/analyzedReviews', helper.l2pAuth, helper.ensureAuthenticated, async (function (req, res) {
+router.get('/peerassessment/:courseId/analyzedReviews', helper.l2pAuth, helper.ensureAuthenticated, async(function (req, res) {
     if (!req.user) {
         return res.status(401).send('Unauthorized');
     }
@@ -576,7 +579,7 @@ router.get('/peerassessment/:courseId/analyzedReviews', helper.l2pAuth, helper.e
 
     // for lists in Assigned reviews section
     if (req.query.rName == 'RCRequestData') {
-        var isAdmin = await (userHelper.isCourseAuthorizedAsync({
+        var isAdmin = await(userHelper.isCourseAuthorizedAsync({
             userId: req.user._id,
             courseId: req.params.courseId
         }))
@@ -653,14 +656,14 @@ router.get('/peerassessment/:courseId/analyzedReviews', helper.l2pAuth, helper.e
  * GET
  * fetch review
  */
-router.get('/peerassessment/:courseId/reviews/:id', helper.l2pAuth, helper.ensureAuthenticated, async (function (req, res) {
+router.get('/peerassessment/:courseId/reviews/:id', helper.l2pAuth, helper.ensureAuthenticated, async(function (req, res) {
     if (!req.user) {
         return res.status(401).send('Unauthorized');
     }
 
     req.body.courseId = mongoose.Types.ObjectId(req.params.courseId);
     req.body._id = mongoose.Types.ObjectId(req.params.id)
-    var isAdmin = await (userHelper.isCourseAuthorizedAsync({
+    var isAdmin = await(userHelper.isCourseAuthorizedAsync({
         userId: req.user._id,
         courseId: req.params.courseId
     }))
@@ -1009,8 +1012,8 @@ router.get('/peerassessment/:courseId/peerreviews/:id', helper.l2pAuth, helper.e
             // parameters
             params,
 
-            async (function (peerReview) {
-                var isAdmin = await (userHelper.isCourseAuthorizedAsync({
+            async(function (peerReview) {
+                var isAdmin = await(userHelper.isCourseAuthorizedAsync({
                     userId: req.user._id,
                     courseId: req.params.courseId
                 }))
@@ -1034,14 +1037,14 @@ router.get('/peerassessment/:courseId/peerreviews/:id', helper.l2pAuth, helper.e
  * GET
  * fetch all peer reviews
  */
-router.get('/peerassessment/:courseId/peerreviews', helper.l2pAuth, helper.ensureAuthenticated, async (function (req, res) {
+router.get('/peerassessment/:courseId/peerreviews', helper.l2pAuth, helper.ensureAuthenticated, async(function (req, res) {
     if (!req.user) {
         return res.status(401).send('Unauthorized');
     }
 
     var pa = new peerAssessment();
     req.body.courseId = mongoose.Types.ObjectId(req.params.courseId);
-    var isAdmin = await (userHelper.isCourseAuthorizedAsync({
+    var isAdmin = await(userHelper.isCourseAuthorizedAsync({
         userId: req.user._id,
         courseId: req.params.courseId
     }))
@@ -1100,6 +1103,7 @@ router.delete('/peerassessment/:courseId/peerreviews/:id', helper.l2pAuth, helpe
  * create calibration
  */
 router.post('/peerassessment/:courseId/peerreviews/:pRId/calibration', helper.l2pAuth, helper.ensureAuthenticated,
+    multipartyMiddleware,
     function (req, res, next) {
         if (!req.user) {
             return res.status(401).send('Unauthorized');
@@ -1110,7 +1114,6 @@ router.post('/peerassessment/:courseId/peerreviews/:pRId/calibration', helper.l2
         req.body.username = req.user.username;
         req.body.courseId = mongoose.Types.ObjectId(req.params.courseId);
         req.body.reviewId = mongoose.Types.ObjectId(req.params.pRId);
-
         c.addCalibration(
             function (err) {
                 console.log(err);
@@ -1138,7 +1141,7 @@ router.post('/peerassessment/:courseId/peerreviews/:pRId/calibration', helper.l2
  * PUT
  * edit calibration
  */
-router.put('/peerassessment/:courseId/peerreviews/:pRId/calibration/:id', helper.l2pAuth, helper.ensureAuthenticated,
+router.put('/peerassessment/:courseId/peerreviews/:pRId/calibration/:cId', helper.l2pAuth, helper.ensureAuthenticated,
     multipartyMiddleware,
     function (req, res, next) {
         if (!req.user) {
@@ -1149,7 +1152,8 @@ router.put('/peerassessment/:courseId/peerreviews/:pRId/calibration/:id', helper
         var c = new calibration();
         req.body.userId = mongoose.Types.ObjectId(req.user._id);
         req.body.courseId = mongoose.Types.ObjectId(req.params.courseId);
-        req.body.pRId = mongoose.Types.ObjectId(req.params.id);
+        req.body.peerReviewId = mongoose.Types.ObjectId(req.params.pRId);
+        req.body.calibrationId = mongoose.Types.ObjectId(req.params.cId);
 
         c.editCalibration(
             function (err) {
@@ -1201,8 +1205,8 @@ router.get('/peerassessment/:courseId/peerreviews/:pRId/calibration/:id', helper
             // parameters
             params,
 
-            async (function (calibration) {
-                var isAdmin = await (userHelper.isCourseAuthorizedAsync({
+            async(function (calibration) {
+                var isAdmin = await(userHelper.isCourseAuthorizedAsync({
                     userId: req.user._id,
                     courseId: req.params.courseId
                 }))
@@ -1227,7 +1231,7 @@ router.get('/peerassessment/:courseId/peerreviews/:pRId/calibration/:id', helper
  * GET
  * fetch all calibrations
  */
-router.get('/peerassessment/:courseId/peerreviews/:pRId', helper.l2pAuth, helper.ensureAuthenticated, async (function (req, res) {
+router.get('/peerassessment/:courseId/peerreviews/:pRId/calibrations', helper.l2pAuth, helper.ensureAuthenticated, async(function (req, res) {
     if (!req.user) {
         return res.status(401).send('Unauthorized');
     }
@@ -1235,7 +1239,7 @@ router.get('/peerassessment/:courseId/peerreviews/:pRId', helper.l2pAuth, helper
     var c = new calibration();
     req.body.courseId = mongoose.Types.ObjectId(req.params.courseId);
     req.body.peerReviewId = mongoose.Types.ObjectId(req.params.pRId);
-    var isAdmin = await (userHelper.isCourseAuthorizedAsync({
+    var isAdmin = await(userHelper.isCourseAuthorizedAsync({
         userId: req.user._id,
         courseId: req.params.courseId
     }))
@@ -1245,7 +1249,7 @@ router.get('/peerassessment/:courseId/peerreviews/:pRId', helper.l2pAuth, helper
     //         "$lte": new Date()
     //     }
     // }
-    c.getCalibration(
+    c.getCalibrations(
         function (err) {
             helper.resReturn(err, res);
         },

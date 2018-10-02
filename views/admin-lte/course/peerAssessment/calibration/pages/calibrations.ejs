@@ -2,23 +2,30 @@
     <div class="col-md-11">
         <table class="table table-hover" ng-show="calibrations.length > 0">
             <thead>
-            <tr>
-                <th>Title</th>
-                <th>Teacher Name</th>
-                <th>Comments</th>
-                <th ng-show="isOwner || isManager || isAdmin"></th>
-            </tr>
+                <tr>
+                    <th>Title</th>
+                    <th>Teacher Name</th>
+                    <th>Comments</th>
+                    <th ng-show="isOwner || isManager || isAdmin"></th>
+                </tr>
             </thead>
             <tbody>
-            <tr ng-repeat="calibration in calibrations" ng-click="viewCalibration(calibration._id)">
-                <td>{{calibration.title}}</td>
-                <td>{{calibration.peerReviewId.title}}</td>
-                <td>{{calibration.studentName}}</td>
-                <td ng-show="isOwner || isManager || isAdmin">
-                    <!--<a href="" ng-click="openEditConfirmationModal(review, $event)"> <i class="ion-edit" style="font-size: medium"></i> </a> &nbsp;-->
-                    <a href="" ng-click="openDeleteCalibrationConfirmationModal(calibration._id, $event)"> <i class="ion-ios-trash" style="font-size: large"></i> </a>
-                </td>
-            </tr>
+                <tr ng-repeat="c in calibrations" ng-click="viewCalibration(c.peerReviewId._id, c._id)">
+                    <td>{{c.title}}</td>
+                    <td>{{c.teacherName}}</td>
+                    <td>{{c.teacherComments}}</td>
+                    <td ng-show="isOwner || isManager || isAdmin">
+                        <a href="" title = "Edit"  ng-click="editCalibration(c.peerReviewId._id, c._id)">
+                            <i class="ionicons ion-android-create" style="font-size: large"></i>
+                        </a>
+                        <a href="" title = "Assign"  ng-click="assignCalibration(c.peerReviewId._id, c._id)">
+                            <i class="ionicons ion-android-person-add" style="font-size: large"></i>
+                        </a>
+                        <a href="" title = "Delete" ng-click="openDeleteCalibrationConfirmationModal(c._id, $event)">
+                            <i class="ion-ios-trash" style="font-size: large"></i>
+                        </a>
+                    </td>
+                </tr>
             </tbody>
         </table>
     </div>

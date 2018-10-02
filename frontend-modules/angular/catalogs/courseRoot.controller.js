@@ -1,7 +1,6 @@
 app.controller('CourseRootController', function ($scope, $rootScope, $filter, $http,
                                                  $location, $routeParams, $timeout,
                                                  courseService, authService, toastr, Page) {
-console.log("MA RANDI HIN");
     $scope.courseId = $routeParams.courseId;
     $scope.course = null;
 

@@ -1,0 +1,92 @@
+<!-- course edit form -->
+<div class="row" ng-controller="AddCalibrationController">
+    <section class="content">
+        <div class="row row-centered">
+            <div class="col-xs-12 col-lg-9 col-md-9 col-sm-9 col col-centered">
+                <div class="box no-border no-round">
+                    <div class="box-header with-border">
+                        <h3 class="box-title">Add Calibration</h3>
+                    </div>
+                    <div class="box-body form-horizontal horizontal-max">
+                        <form class="form-horizontal horizontal-max" name="form" role="form" novalidate>
+                            <div class="tab-content">
+                                <div id="editBasicTab" class="tab-pane fade in active">
+                                    <br/>
+                                    <fieldset>
+                                        <div class="form-group" ng-class="{ 'has-error' : form.title.$invalid && !form.title.$pristine }">
+                                            <label for="inputTitle" class="col-sm-4 control-label">Title *</label>
+                                            <div class="col-sm-4">
+                                                <input type="text" name="title" class="form-control original-form-control" id="inputTitle" ng-model="newCalibrationObject.title"
+                                                    placeholder="Title" required>
+                                            </div>
+                                            <p ng-show="form.title.$invalid && !form.title.$pristine" class="help-block">Title is required.</p>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="inputTeacherName" class="col-sm-4 control-label">Teacher Name</label>
+                                            <div class="col-sm-4">
+                                                <input type="text" rows="7" class="form-control original-form-control" id="inputTeacherName" ng-model="newCalibrationObject.teacherName"
+                                                    placeholder="Name" />
+                                            </div>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="inputTeacherComments" class="col-sm-4 control-label">Comments</label>
+                                            <div class="col-sm-4">
+                                                <textarea rows="7" class="form-control original-form-control" id="inputTeacherComments" ng-model="newCalibrationObject.teacherComments"
+                                                    placeholder="Comments" />
+                                            </div>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="inputCalibrationDocuments" class="col-sm-4 control-label">Calibration Document</label>
+                                            <div class="col-sm-2">
+                                                <div class="btn btn-sm btn-default"
+                                                     ngf-select accept="*"
+                                                     ng-model="calibrationDocuments" ngf-multiple="false" ngf-keep="true" ngf-max-size='1000000'><i
+                                                            class="ionicons ion-document-text"></i> &nbsp; Upload Files
+                                                </div>
+                                            </div>
+                                            <!--<div class="col-sm-2">
+                                                <div class="btn btn-primary btn-file"><input type="file" class="form-control"> Browse</div>
+                                            </div>-->
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label class="col-sm-4 control-label"></label>
+                                            <div class="col-sm-8">
+                                                <div ng-show="calibrationDocuments" ng-repeat="f in calibrationDocuments">
+                                                    <div class="label label-info">
+                                                        &nbsp; <span>{{f.name}}</span> &nbsp;
+                                                    </div>
+                                                    &nbsp;
+                                                    <a href="" ng-click="deleteSelectedCalibrationDocuments(f.name)"> <i class="ion-close-round"></i></a>
+                                                    <br>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- TODO date validation -->
+
+                                    </fieldset>
+                                    <div class="modal-footer control-group">
+                                        <br class="clear">
+                                        <error-block ng-show="errors.length > 0" messages="errors"></error-block>
+                                        <!-- Button -->
+                                        <div class="controls pull-right">
+                                            <button class="btn btn-primary" ng-disabled="!isFormValid()" ng-click="createCalibration()"> Save
+                                                <spinner show="isLoading"></spinner>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!--</div>-->
+</div>
