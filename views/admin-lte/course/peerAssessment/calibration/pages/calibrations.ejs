@@ -15,13 +15,13 @@
                     <td>{{c.teacherName}}</td>
                     <td>{{c.teacherComments}}</td>
                     <td ng-show="isOwner || isManager || isAdmin">
-                        <a href="" title = "Edit"  ng-click="editCalibration(c.peerReviewId._id, c._id)">
+                        <a href="" title="Edit" ng-click="editCalibration(c.peerReviewId._id, c._id)">
                             <i class="ionicons ion-android-create" style="font-size: large"></i>
                         </a>
-                        <a href="" title = "Assign"  ng-click="assignCalibration(c.peerReviewId._id, c._id)">
+                        <!-- <a href="" title="Assign" ng-click="assignCalibration(c.peerReviewId._id, c._id)">
                             <i class="ionicons ion-android-person-add" style="font-size: large"></i>
-                        </a>
-                        <a href="" title = "Delete" ng-click="openDeleteCalibrationConfirmationModal(c._id, $event)">
+                        </a> -->
+                        <a href="" title="Delete" ng-click="openDeleteCalibrationConfirmationModal(c._id, $event)">
                             <i class="ion-ios-trash" style="font-size: large"></i>
                         </a>
                     </td>
@@ -29,4 +29,6 @@
             </tbody>
         </table>
     </div>
+
+    <% include ../modals/confirmDeleteCalibrationModal %>
 </div>

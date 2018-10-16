@@ -1,4 +1,4 @@
-app.controller('EditPeerReviewController', function($scope, $http, toastr, $window, Upload, ActionBarService, $location) {
+app.controller('EditPeerReviewController', function ($scope, $http, toastr, $window, Upload, ActionBarService, $location) {
     console.log('Debug: EditPeerReviewController')
     ActionBarService.extraActionsMenu = [];
 
@@ -24,59 +24,59 @@ app.controller('EditPeerReviewController', function($scope, $http, toastr, $wind
     //$scope.newAssignObj.deletedUploadedFiles = [];
     //$scope.newAssignObj.deletedUploadedSolutions = [];
 
-    $scope.deleteUploadedFiles = function(fileName) {
-        for(var i=0; i<$scope.newAssignObj.displayDocumentsList.length; i++) {
+    $scope.deleteUploadedFiles = function (fileName) {
+        for (var i = 0; i < $scope.newAssignObj.displayDocumentsList.length; i++) {
             if ($scope.newAssignObj.displayDocumentsList[i].link == fileName) {
-                if(!$scope.newAssignObj.deletedUploadedFiles) {
+                if (!$scope.newAssignObj.deletedUploadedFiles) {
                     $scope.newAssignObj.deletedUploadedFiles = [];
                 }
                 $scope.newAssignObj.deletedUploadedFiles.push($scope.newAssignObj.documents[i]);
-                $scope.newAssignObj.documents.splice(i,1);
-                $scope.newAssignObj.displayDocumentsList.splice(i,1);
+                $scope.newAssignObj.documents.splice(i, 1);
+                $scope.newAssignObj.displayDocumentsList.splice(i, 1);
                 break;
             }
         }
         console.log('Check deleted Objects', $scope.newAssignObj.deletedUploadedFiles, $scope.newAssignObj.documents, $scope.newAssignObj.displayDocumentsList);
     }
 
-    $scope.deleteSelectedFiles = function(fileName) {
+    $scope.deleteSelectedFiles = function (fileName) {
         console.log('Review Docs Selected', $scope.reviewDocuments, fileName);
-        for(var i=0; i<$scope.reviewDocuments.length; i++) {
-            if($scope.reviewDocuments[i].name == fileName) {
-                $scope.reviewDocuments.splice(i,1);
+        for (var i = 0; i < $scope.reviewDocuments.length; i++) {
+            if ($scope.reviewDocuments[i].name == fileName) {
+                $scope.reviewDocuments.splice(i, 1);
                 break;
             }
         }
     }
 
-    $scope.deleteUploadedSolutions = function(fileName) {
-        for(var i=0; i<$scope.newAssignObj.displaySolutionsList.length; i++) {
+    $scope.deleteUploadedSolutions = function (fileName) {
+        for (var i = 0; i < $scope.newAssignObj.displaySolutionsList.length; i++) {
             if ($scope.newAssignObj.displaySolutionsList[i].link == fileName) {
-                if(!$scope.newAssignObj.deletedUploadedSolutions) {
+                if (!$scope.newAssignObj.deletedUploadedSolutions) {
                     $scope.newAssignObj.deletedUploadedSolutions = [];
                 }
                 $scope.newAssignObj.deletedUploadedSolutions.push($scope.newAssignObj.solutions[i]);
-                $scope.newAssignObj.solutions.splice(i,1);
-                $scope.newAssignObj.displaySolutionsList.splice(i,1);
+                $scope.newAssignObj.solutions.splice(i, 1);
+                $scope.newAssignObj.displaySolutionsList.splice(i, 1);
                 break;
             }
         }
         console.log('Check deleted Objects', $scope.newAssignObj.deletedUploadedSolutions, $scope.newAssignObj.solutions, $scope.newAssignObj.displaySolutionsList);
     }
 
-    $scope.deleteSelectedSolutions = function(fileName) {
+    $scope.deleteSelectedSolutions = function (fileName) {
         console.log('Review Docs Selected', $scope.sampleSolutions, fileName);
-        for(var i=0; i<$scope.sampleSolutions.length; i++) {
-            if($scope.sampleSolutions[i].name == fileName) {
-                $scope.sampleSolutions.splice(i,1);
+        for (var i = 0; i < $scope.sampleSolutions.length; i++) {
+            if ($scope.sampleSolutions[i].name == fileName) {
+                $scope.sampleSolutions.splice(i, 1);
                 break;
             }
         }
     }
 
-    $scope.initiateController = function() {
+    $scope.initiateController = function () {
         var vId = $location.search().vId;
-        if($scope.vName && vId) {
+        if ($scope.vName && vId) {
             $scope.newAssignObj = null;
 
             var url = '/api/peerassessment/' + $scope.course._id + '/peerreviews/' + vId;
@@ -146,17 +146,17 @@ app.controller('EditPeerReviewController', function($scope, $http, toastr, $wind
     }
 
     $scope.dateValidationObject = {
-        publicationDate : { valid: true, message: '' },
-        dueDate : { valid: true, message: '' },
-        solutionDate : { valid: true, message: '' },
-        reviewStartDate : { valid: true, message: '' },
-        reviewEndDate : { valid: true, message: '' },
-        secondDueDate : { valid: true, message: '' },
-        secondReviewStartDate : { valid: true, message: '' },
-        secondReviewEndDate : { valid: true, message: '' },
+        publicationDate: { valid: true, message: '' },
+        dueDate: { valid: true, message: '' },
+        solutionDate: { valid: true, message: '' },
+        reviewStartDate: { valid: true, message: '' },
+        reviewEndDate: { valid: true, message: '' },
+        secondDueDate: { valid: true, message: '' },
+        secondReviewStartDate: { valid: true, message: '' },
+        secondReviewEndDate: { valid: true, message: '' },
     }
 
-    var clearValidation = function() {
+    var clearValidation = function () {
         $scope.dateValidationObject.publicationDate.valid = true
         $scope.dateValidationObject.dueDate.valid = true
         $scope.dateValidationObject.solutionDate.valid = true
@@ -167,10 +167,10 @@ app.controller('EditPeerReviewController', function($scope, $http, toastr, $wind
         $scope.dateValidationObject.secondReviewEndDate.valid = true
     }
 
-    $scope.formValidation = function() {
+    $scope.formValidation = function () {
         clearValidation()
-        if($scope.newAssignObj.dueDate) {
-            if(!$scope.newAssignObj.publicationDate) {
+        if ($scope.newAssignObj.dueDate) {
+            if (!$scope.newAssignObj.publicationDate) {
                 $scope.dateValidationObject.publicationDate.valid = false;
                 $scope.dateValidationObject.publicationDate.message = 'Publication date is required for due date';
             } else if ($scope.newAssignObj.publicationDate >= $scope.newAssignObj.dueDate) {
@@ -178,8 +178,9 @@ app.controller('EditPeerReviewController', function($scope, $http, toastr, $wind
                 $scope.dateValidationObject.dueDate.message = 'Due date should be greater than publication date';
             }
         }
-        if($scope.newAssignObj.ssPublicationDate) {
-            if(!$scope.newAssignObj.dueDate) {
+
+        if ($scope.newAssignObj.ssPublicationDate) {
+            if (!$scope.newAssignObj.dueDate) {
                 $scope.dateValidationObject.dueDate.valid = false;
                 $scope.dateValidationObject.dueDate.message = 'Due date is required for solution publication date';
             } else if ($scope.newAssignObj.dueDate >= $scope.newAssignObj.ssPublicationDate) {
@@ -188,8 +189,8 @@ app.controller('EditPeerReviewController', function($scope, $http, toastr, $wind
             }
         }
 
-        if($scope.newAssignObj.reviewSettings.reviewStartDate) {
-            if(!$scope.newAssignObj.dueDate) {
+        if ($scope.newAssignObj.reviewSettings.reviewStartDate) {
+            if (!$scope.newAssignObj.dueDate) {
                 $scope.dateValidationObject.dueDate.valid = false;
                 $scope.dateValidationObject.dueDate.message = 'Due date is required for review process';
             } else if ($scope.newAssignObj.dueDate >= $scope.newAssignObj.reviewSettings.reviewStartDate) {
@@ -198,8 +199,8 @@ app.controller('EditPeerReviewController', function($scope, $http, toastr, $wind
             }
         }
 
-        if($scope.newAssignObj.reviewSettings.reviewEndDate) {
-            if(!$scope.newAssignObj.reviewSettings.reviewStartDate) {
+        if ($scope.newAssignObj.reviewSettings.reviewEndDate) {
+            if (!$scope.newAssignObj.reviewSettings.reviewStartDate) {
                 $scope.dateValidationObject.reviewStartDate.valid = false;
                 $scope.dateValidationObject.reviewStartDate.message = 'Review start date is required';
             } else if ($scope.newAssignObj.reviewSettings.reviewStartDate >= $scope.newAssignObj.reviewSettings.reviewEndDate) {
@@ -207,9 +208,10 @@ app.controller('EditPeerReviewController', function($scope, $http, toastr, $wind
                 $scope.dateValidationObject.reviewEndDate.message = 'Review end date should be greater than review start date';
             }
         }
-        if($scope.newAssignObj.reviewSettings.loop == 'multiple') {
-            if($scope.newAssignObj.reviewSettings.secondDueDate) {
-                if(!$scope.newAssignObj.reviewSettings.reviewEndDate) {
+
+        if ($scope.newAssignObj.reviewSettings.loop == 'multiple') {
+            if ($scope.newAssignObj.reviewSettings.secondDueDate) {
+                if (!$scope.newAssignObj.reviewSettings.reviewEndDate) {
                     $scope.dateValidationObject.reviewEndDate.valid = false;
                     $scope.dateValidationObject.reviewEndDate.message = 'Review end date is required';
                 } else if ($scope.newAssignObj.reviewSettings.reviewEndDate >= $scope.newAssignObj.reviewSettings.secondDueDate) {
@@ -218,8 +220,8 @@ app.controller('EditPeerReviewController', function($scope, $http, toastr, $wind
                 }
             }
 
-            if($scope.newAssignObj.reviewSettings.secondReviewStartDate) {
-                if(!$scope.newAssignObj.reviewSettings.secondDueDate) {
+            if ($scope.newAssignObj.reviewSettings.secondReviewStartDate) {
+                if (!$scope.newAssignObj.reviewSettings.secondDueDate) {
                     $scope.dateValidationObject.secondDueDate.valid = false;
                     $scope.dateValidationObject.secondDueDate.message = 'Second due date is required';
                 } else if ($scope.newAssignObj.reviewSettings.secondDueDate >= $scope.newAssignObj.reviewSettings.secondReviewStartDate) {
@@ -228,8 +230,8 @@ app.controller('EditPeerReviewController', function($scope, $http, toastr, $wind
                 }
             }
 
-            if($scope.newAssignObj.reviewSettings.secondReviewEndDate) {
-                if(!$scope.newAssignObj.reviewSettings.secondReviewStartDate) {
+            if ($scope.newAssignObj.reviewSettings.secondReviewEndDate) {
+                if (!$scope.newAssignObj.reviewSettings.secondReviewStartDate) {
                     $scope.dateValidationObject.secondReviewStartDate.valid = false;
                     $scope.dateValidationObject.secondReviewStartDate.message = 'Second review start date is required';
                 } else if ($scope.newAssignObj.reviewSettings.secondReviewStartDate >= $scope.newAssignObj.reviewSettings.secondReviewEndDate) {
@@ -240,7 +242,7 @@ app.controller('EditPeerReviewController', function($scope, $http, toastr, $wind
         }
     }
 
-    $scope.isFormValid = function() {
+    $scope.isFormValid = function () {
         if ($scope.form.$error.min && $scope.form.$error.min.length) {
             return false
         } else if ($scope.form.$error.number && $scope.form.$error.number.length) {
@@ -257,7 +259,7 @@ app.controller('EditPeerReviewController', function($scope, $http, toastr, $wind
         return true
     }
 
-    $scope.editPeerReview = function() {
+    $scope.editPeerReview = function () {
         console.log('Form Object', $scope.form)
         $scope.isLoading = true;
         var uploadParams = {
@@ -266,16 +268,16 @@ app.controller('EditPeerReviewController', function($scope, $http, toastr, $wind
             fields: $scope.newAssignObj
         };
         uploadParams.file = [];
-        if($scope.reviewDocuments) {
-            uploadParams.file.push({'reviewDocuments':$scope.reviewDocuments});
+        if ($scope.reviewDocuments) {
+            uploadParams.file.push({ 'reviewDocuments': $scope.reviewDocuments });
         }
-        if($scope.sampleSolutions) {
-            uploadParams.file.push({'sampleSolutions':$scope.sampleSolutions});
+        if ($scope.sampleSolutions) {
+            uploadParams.file.push({ 'sampleSolutions': $scope.sampleSolutions });
         }
 
         $scope.upload = Upload.upload(
             uploadParams
-            )
+        )
             .progress(function (evt) {
                 if (!evt.config.file)
                     return;

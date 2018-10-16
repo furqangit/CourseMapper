@@ -194,6 +194,14 @@ app.controller('PeerAssessmentController', function ($scope, $http, courseServic
         window.document.location = '#/cid/' + $scope.course._id + '/?tab=peerAssessment&pRId=' + peerReviewId + '&vName=editCalibration&cId=' + calibrationId;
     }
 
+    $scope.viewCalibration = function (peerReviewId, calibrationId) {
+        window.document.location = '#/cid/' + $scope.course._id + '/?tab=peerAssessment&pRId=' + peerReviewId + '&vName=viewCalibration&cId=' + calibrationId;
+    }
+
+    $scope.reviewCalibration = function (params) {
+        window.document.location = '#/cid/' + $scope.course._id + '/?tab=peerAssessment&pRId=' + params.peerReviewId + '&vName=reviewCalibration&cId=' + params.calibrationId;
+    }
+
     // Home
     $scope.redirectPRHome = function () {
         $scope.vName = false;
@@ -259,6 +267,12 @@ app.controller('PeerAssessmentController', function ($scope, $http, courseServic
             } else if ($scope.vName == 'editCalibration') {
                 $scope.currentView = 'editCalibration.tpl'
                 $scope.manageBreadCrumb('Edit Calibration')
+            } else if ($scope.vName == 'viewCalibration') {
+                $scope.currentView = 'viewCalibration.tpl'
+                $scope.manageBreadCrumb('View Calibration')
+            } else if ($scope.vName == 'reviewCalibration') {
+                $scope.currentView = 'reviewCalibration.tpl'
+                $scope.manageBreadCrumb('Review Calibration')
             }
         } else {
             $scope.currentView = 'main.tpl';

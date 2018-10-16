@@ -13,7 +13,6 @@ var calibrationSchema = new mongoose.Schema({
     peerReviewId: { type: mongoose.Schema.Types.ObjectId, ref: 'peerreviews', required: true },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true },
     courseId: { type: mongoose.Schema.Types.ObjectId, ref: 'courses', required: true },
-    isSubmitted : { type: Boolean },
     dateAdded: { type: Date },
     dateUpdated: { type: Date }
 },

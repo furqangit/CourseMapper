@@ -1,8 +1,8 @@
-<div class = "pa" ng-controller="PeerAssessmentController">
+<div class="pa" ng-controller="PeerAssessmentController">
     <div ng-include="currentView"></div>
     <% include peerReview/modals/confirmDeleteAssignmentModal %>
-    <% include solution/modals/addEditSolutionModal%>
-    <% include solution/modals/confirmDeleteSolutionModal %>
+        <% include solution/modals/addEditSolutionModal%>
+            <% include solution/modals/confirmDeleteSolutionModal %>
 </div>
 <script type="text/ng-template" id="reviewList.tpl">
     <% include review/pages/review%>
@@ -35,6 +35,9 @@
 </script>
 <script type="text/ng-template" id="editCalibration.tpl">
     <% include calibration/pages/editCalibration%>
+</script>
+<script type="text/ng-template" id="viewCalibration.tpl">
+    <% include calibration/pages/viewCalibration%>
 </script>
 <script type="text/ng-template" id="manageRubrics.tpl">
     <div ng-controller="ManageRubricsController">

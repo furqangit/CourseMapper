@@ -44,6 +44,41 @@ app.controller('CalibrationController', function($scope, $location, $http, toast
         });
     }
 
+    $scope.openDeleteCalibrationConfirmationModal = function(cId, event){
+        if (event) {
+            event.stopPropagation();
+        }
+        $scope.deleteCalibrationId = cId;
+        console.log($scope.deleteCalibrationId,".............................")
+        var modal = $('#confirmDeleteCalibrationModal');
+        modal.attr("calibrationId", cId);
+        modal.modal('show');
+    }
+
+    
+    $scope.deleteCalibration = function () {
+        var calibrationId = $('#confirmDeleteCalibrationModal').attr('calibrationId');
+        console.log("idhr to ma agya hun: ", calibrationId);
+        var url = '/api/peerassessment/' + $scope.course._id + '/calibrations/' + calibrationId;
+
+        $http.delete(url).then(function (response) {
+            for (var i = 0; i < $scope.calibrations.length; i++) {
+                if ($scope.calibrations[i]._id == calibrationId) {
+                    break;
+                }
+            }
+            $scope.calibrations.splice(i, 1);
+            if ($scope.vName || $scope.calibrationId) {
+               // window.location.reload();
+            }
+        }, function (err) {
+            // Check for proper error message later
+            toastr.error('Internal Server Error. Please try again later.');
+        });
+
+        $('#confirmDeleteCalibrationModal').modal('hide');
+    }
+
     if($scope.course && $scope.course._id) {
         $scope.requestData();
     } else {

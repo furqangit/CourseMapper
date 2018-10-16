@@ -22,7 +22,7 @@ app.controller('AddCalibrationController', function ($scope, $location, $http, t
     $scope.newCalibrationObject = {
         title: "",
         teacherName: "",
-        teacherComments: ""
+        teacherComments: "",
     }
     $scope.calibrationDocuments = false;
 

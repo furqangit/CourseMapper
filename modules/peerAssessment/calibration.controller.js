@@ -34,7 +34,7 @@ calibration.prototype.getCalibration = function (error, params, success) {
 };
 
 calibration.prototype.getCalibrations = function (error, params, success) {
-    Calibration.find(params).sort({ dateAdded: -1}).populate('peerReviewId').exec(function (err, docs) {
+    Calibration.find(params).sort({ dateAdded: -1 }).populate('peerReviewId').exec(function (err, docs) {
         if (!err) {
             success(docs);
         } else {
@@ -54,32 +54,33 @@ calibration.prototype.deleteCalibration = function (error, params, success) {
         async(function (isAllowed) {
             if (isAllowed) {
                 console.log('Deleting Calibration: ' + params.cId)
-                Calibtration.findOne(
+                Calibration.findOne(
                     { _id: mongoose.Types.ObjectId(params.cId) }
                 ).exec(function (err, doc) {
                     if (!err) {
-                        var sr = new reviews()
-                        sr.getReviews(
-                            function (err) {
-                                error(err)
-                            }, {
-                                calibrationId: mongoose.Types.ObjectId(doc._id)
-                            }, function (docs) {
-                                _.each(docs, function (doc) {
-                                    sr.deleteReview(
-                                        function (err) {
-                                            error(err)
-                                        },
-                                        {
-                                            userId: params.userId,
-                                            courseId: params.courseId,
-                                            reviewId: mongoose.Types.ObjectId(doc._id)
-                                        },
-                                        function () {
-                                            console.log("Review successfully deleted: " + doc._id)
-                                        })
-                                })
-                            })
+                        // var sr = new reviews()
+                        // sr.getReviews(
+                        //     function (err) {
+                        //         error(err)
+                        //     },
+                        //      {
+                        //         calibrationId: mongoose.Types.ObjectId(doc._id)
+                        //     }, function (docs) {
+                        //         _.each(docs, function (doc) {
+                        //             sr.deleteReview(
+                        //                 function (err) {
+                        //                     error(err)
+                        //                 },
+                        //                 {
+                        //                     userId: params.userId,
+                        //                     courseId: params.courseId,
+                        //                     reviewId: mongoose.Types.ObjectId(doc._id)
+                        //                 },
+                        //                 function () {
+                        //                     console.log("Review successfully deleted: " + doc._id)
+                        //                 })
+                        //         })
+                        //     })
                         _.each(doc.calibrationDocuments, function (docPath) {
                             fs.unlink(appRoot + '/public/' + docPath, function (err) {
                                 if (err) {
@@ -90,7 +91,7 @@ calibration.prototype.deleteCalibration = function (error, params, success) {
                         })
 
 
-                        Calibtration.remove(
+                        Calibration.remove(
                             { _id: mongoose.Types.ObjectId(params.cId) }
                         ).exec(function (err, res) {
                             if (!err) {
@@ -118,12 +119,11 @@ calibration.prototype.editCalibration = function (error, params, files, success)
 
     self.getCalibration(error,
         { _id: params.calibrationId },
-        function (calibtrationObj) {
-            calibtrationObj.title = params.title;
-            calibtrationObj.teacherName = params.teacherName;
-            calibtrationObj.teacherComments = params.teacherComments;
-            calibtrationObj.calibrationDocuments = params.calibrationDocuments || [];
-            calibtrationObj.isSubmitted = true;
+        function (calibrationObj) {
+            calibrationObj.title = params.title;
+            calibrationObj.teacherName = params.teacherName;
+            calibrationObj.teacherComments = params.teacherComments;
+            calibrationObj.calibrationDocuments = params.calibrationDocuments || [];
 
             if (files && files.file) {
                 var calibrationDocuments = null;
@@ -136,16 +136,16 @@ calibration.prototype.editCalibration = function (error, params, files, success)
                         self.saveResourceFile(error,
                             f,
                             'calibrationDocuments',
-                            calibtrationObj,
+                            calibrationObj,
                             function (fn) {
                                 var duplicate = false;
-                                _.each(calibtrationObj.calibrationDocuments, function (doc) {
+                                _.each(calibrationObj.calibrationDocuments, function (doc) {
                                     if (fn == doc) {
                                         duplicate = true;
                                     }
                                 })
                                 if (!duplicate) {
-                                    calibtrationObj.calibrationDocuments.push(fn);
+                                    calibrationObj.calibrationDocuments.push(fn);
                                 }
                             })
                     }
@@ -164,8 +164,8 @@ calibration.prototype.editCalibration = function (error, params, files, success)
                 });
             })
 
-            console.log('Calibration', calibtrationObj);
-            calibtrationObj.save(function (err, doc) {
+            console.log('Calibration', calibrationObj);
+            calibrationObj.save(function (err, doc) {
                 if (err) {
                     console.log('Failed updating calibration');
                     error(err);
@@ -205,7 +205,6 @@ calibration.prototype.addCalibration = function (error, params, files, success) 
                 createdBy: mongoose.Types.ObjectId(params.userId),
                 courseId: mongoose.Types.ObjectId(params.courseId),
                 peerReviewId: mongoose.Types.ObjectId(params.reviewId),
-                isSubmitted: false,
                 teacherName: params.username,
                 teacherComments: params.teacherComments
             });
