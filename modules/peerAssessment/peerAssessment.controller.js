@@ -34,7 +34,25 @@ peerAssessment.prototype.getPeerReview = function (error, params, success) {
         });
 };
 
-peerAssessment.prototype.deletePeerReview = function(error, params, success) {
+peerAssessment.prototype.getPeerReviewRubrics = function (error, params, success) {
+    PeerReview.findOne(params)
+    .populate({
+        path: 'reviewSettings.rubrics',
+        model: 'rubrics'
+    }).lean().exec(function (err, doc) {
+        if (err) {
+            error(err);
+        } else {
+            if (doc) {
+                success(doc);
+            }
+            else
+                error(helper.createError404('Peer Review'));
+        }
+    });
+};
+
+peerAssessment.prototype.deletePeerReview = function (error, params, success) {
     userHelper.isAuthorized(error,
         {
             userId: params.userId,
@@ -46,42 +64,42 @@ peerAssessment.prototype.deletePeerReview = function(error, params, success) {
                 console.log('Deleting peer review: ' + params.pRId)
                 var sc = new solutions();
                 await(sc.getSolutions(
-                        function (err) {
-                            error(err)
-                        },
-                        {peerReviewId: mongoose.Types.ObjectId(params.pRId)},
-                        function (docs) {
-                            _.each(docs, function(doc) {
-                                sc.deleteSolution(
-                                    function(err){
-                                        error(err)
-                                    },
-                                    {
-                                        userId: params.userId,
-                                        courseId: params.courseId,
-                                        sId: doc._id
-                                    },
-                                    function () {
-                                        console.log("Solution successfully deleted: " + doc._id)
-                                    })
-                            })
-                        }
-                    ))
+                    function (err) {
+                        error(err)
+                    },
+                    { peerReviewId: mongoose.Types.ObjectId(params.pRId) },
+                    function (docs) {
+                        _.each(docs, function (doc) {
+                            sc.deleteSolution(
+                                function (err) {
+                                    error(err)
+                                },
+                                {
+                                    userId: params.userId,
+                                    courseId: params.courseId,
+                                    sId: doc._id
+                                },
+                                function () {
+                                    console.log("Solution successfully deleted: " + doc._id)
+                                })
+                        })
+                    }
+                ))
                 PeerReview.findOne(
-                    {_id: mongoose.Types.ObjectId(params.pRId)}
-                ).exec(function(err, doc) {
-                    if(!err) {
-                        _.each(doc.documents, function(docPath) {
-                            fs.unlink(appRoot + '/public/' + docPath, function(err) {
-                                if(err) {
+                    { _id: mongoose.Types.ObjectId(params.pRId) }
+                ).exec(function (err, doc) {
+                    if (!err) {
+                        _.each(doc.documents, function (docPath) {
+                            fs.unlink(appRoot + '/public/' + docPath, function (err) {
+                                if (err) {
                                     debug(err);
                                 }
                                 debug("File deleted successfully");
                             });
                         })
-                        _.each(doc.solutions, function(docPath) {
-                            fs.unlink(appRoot + '/public/' + docPath, function(err) {
-                                if(err) {
+                        _.each(doc.solutions, function (docPath) {
+                            fs.unlink(appRoot + '/public/' + docPath, function (err) {
+                                if (err) {
                                     debug(err);
                                 }
                                 debug("File deleted successfully");
@@ -89,9 +107,9 @@ peerAssessment.prototype.deletePeerReview = function(error, params, success) {
                         })
 
                         PeerReview.remove(
-                            {_id: mongoose.Types.ObjectId(params.pRId)}
-                        ).exec(function(err, res){
-                            if(!err) {
+                            { _id: mongoose.Types.ObjectId(params.pRId) }
+                        ).exec(function (err, res) {
+                            if (!err) {
                                 success();
                             } else {
                                 error(err);
@@ -107,9 +125,9 @@ peerAssessment.prototype.deletePeerReview = function(error, params, success) {
         }));
 }
 
-peerAssessment.prototype.getPeerReviews = function (error, params , success) {
-    PeerReview.find(params).sort({dateAdded: -1}).exec(function(err, docs) {
-        if(!err) {
+peerAssessment.prototype.getPeerReviews = function (error, params, success) {
+    PeerReview.find(params).sort({ dateAdded: -1 }).exec(function (err, docs) {
+        if (!err) {
             success(docs);
         } else {
             error(err);
@@ -128,7 +146,7 @@ peerAssessment.prototype.editPeerReview = function (error, params, files, succes
             _id: params.pRId
         },
 
-        function(peerReview) {
+        function (peerReview) {
             userHelper.isAuthorized(error,
                 {
                     userId: params.userId,
@@ -138,8 +156,8 @@ peerAssessment.prototype.editPeerReview = function (error, params, files, succes
                 function (isAllowed) {
                     if (isAllowed) {
 
-                        if(params.reviewSettings.rubrics) {
-                            _.map(params.reviewSettings.rubrics, function(r) {
+                        if (params.reviewSettings.rubrics) {
+                            _.map(params.reviewSettings.rubrics, function (r) {
                                 return mongoose.Types.ObjectId(r)
                             })
                         }
@@ -154,32 +172,32 @@ peerAssessment.prototype.editPeerReview = function (error, params, files, succes
 
                         debug(params)
 
-                        if(params.publicationDate && params.publicationDate !== 'null' && moment(params.publicationDate).isValid()) {
+                        if (params.publicationDate && params.publicationDate !== 'null' && moment(params.publicationDate).isValid()) {
                             _.extend(peerReview, { publicationDate: new Date(params.publicationDate) });
                         }
-                        if(params.dueDate && params.dueDate !== 'null' && moment(params.dueDate).isValid()) {
+                        if (params.dueDate && params.dueDate !== 'null' && moment(params.dueDate).isValid()) {
                             _.extend(peerReview, { dueDate: new Date(params.dueDate) });
                         }
-                        if(params.ssPublicationDate && params.ssPublicationDate !== null && moment(params.ssPublicationDate).isValid()) {
+                        if (params.ssPublicationDate && params.ssPublicationDate !== null && moment(params.ssPublicationDate).isValid()) {
                             _.extend(peerReview, { solutionPublicationDate: new Date(params.ssPublicationDate) });
                         }
                         // peerReview.save();
-                        if(files && files.file) {
+                        if (files && files.file) {
                             var reviewDocuments = null;
                             var sampleSolutions = null;
-                            if(files.file.length == 2){
+                            if (files.file.length == 2) {
                                 reviewDocuments = files.file[0].reviewDocuments
                                 sampleSolutions = files.file[1].sampleSolutions
                             } else if (files.file.length == 1) {
-                                if(files.file[0] && files.file[0].reviewDocuments) {
+                                if (files.file[0] && files.file[0].reviewDocuments) {
                                     reviewDocuments = files.file[0].reviewDocuments
                                 }
-                                if(files.file[0] && files.file[0].sampleSolutions) {
+                                if (files.file[0] && files.file[0].sampleSolutions) {
                                     sampleSolutions = files.file[0].sampleSolutions
                                 }
                             }
 
-                            if(reviewDocuments && reviewDocuments.constructor == Array) {
+                            if (reviewDocuments && reviewDocuments.constructor == Array) {
                                 for (var i in reviewDocuments) {
                                     var f = reviewDocuments[i];
                                     self.saveResourceFile(error,
@@ -200,21 +218,21 @@ peerAssessment.prototype.editPeerReview = function (error, params, files, succes
                                 }
                             }
 
-                            if(sampleSolutions && sampleSolutions.constructor == Array) {
+                            if (sampleSolutions && sampleSolutions.constructor == Array) {
                                 for (var i in sampleSolutions) {
                                     var f = sampleSolutions[i];
                                     self.saveResourceFile(error,
                                         f,
                                         'sampleSolution',
                                         peerReview,
-                                        function(fn) {
+                                        function (fn) {
                                             var duplicate = false;
-                                            _.each(peerReview.solutions, function(doc){
-                                                if(fn == doc) {
+                                            _.each(peerReview.solutions, function (doc) {
+                                                if (fn == doc) {
                                                     duplicate = true;
                                                 }
                                             })
-                                            if(!duplicate) {
+                                            if (!duplicate) {
                                                 peerReview.solutions.push(fn);
                                             }
                                         })
@@ -223,9 +241,9 @@ peerAssessment.prototype.editPeerReview = function (error, params, files, succes
                         }
                         // Files deletion should be performed here
                         console.log('Deleting files', params.deletedUploadedFiles);
-                        _.each(params.deletedUploadedFiles, function(filePath) {
-                            fs.unlink(appRoot + '/public/' + filePath, function(err) {
-                                if(err) {
+                        _.each(params.deletedUploadedFiles, function (filePath) {
+                            fs.unlink(appRoot + '/public/' + filePath, function (err) {
+                                if (err) {
                                     debug(err);
                                 }
                                 debug("File deleted successfully");
@@ -233,9 +251,9 @@ peerAssessment.prototype.editPeerReview = function (error, params, files, succes
                             });
                         })
 
-                        _.each(params.deletedUploadedSolutions, function(filePath) {
-                            fs.unlink(appRoot + '/public/' + filePath, function(err) {
-                                if(err) {
+                        _.each(params.deletedUploadedSolutions, function (filePath) {
+                            fs.unlink(appRoot + '/public/' + filePath, function (err) {
+                                if (err) {
                                     debug(err);
                                 }
                                 debug("File deleted successfully");
@@ -268,7 +286,7 @@ peerAssessment.prototype.addPeerReview = function (error, params, files, success
     if (!helper.checkRequiredParams(params, ['title', 'totalMarks', 'courseId', 'userId'], error)) {
         return;
     }
-    
+
     userHelper.isAuthorized(error,
         {
             userId: params.userId,
@@ -277,8 +295,8 @@ peerAssessment.prototype.addPeerReview = function (error, params, files, success
 
         function (isAllowed) {
             if (isAllowed) {
-                if(params.reviewSettings.rubrics) {
-                    _.map(params.reviewSettings.rubrics, function(r) {
+                if (params.reviewSettings.rubrics) {
+                    _.map(params.reviewSettings.rubrics, function (r) {
                         return mongoose.Types.ObjectId(r)
                     })
                 }
@@ -293,13 +311,13 @@ peerAssessment.prototype.addPeerReview = function (error, params, files, success
                     reviewSettings: params.reviewSettings
                 });
 
-                if(params.publicationDate && params.publicationDate !== 'null' && moment(params.publicationDate).isValid()) {
+                if (params.publicationDate && params.publicationDate !== 'null' && moment(params.publicationDate).isValid()) {
                     _.extend(peerReview, { publicationDate: new Date(params.publicationDate) });
                 }
-                if(params.dueDate && params.dueDate !== 'null' && moment(params.dueDate).isValid()) {
+                if (params.dueDate && params.dueDate !== 'null' && moment(params.dueDate).isValid()) {
                     _.extend(peerReview, { dueDate: new Date(params.dueDate) });
                 }
-                if(params.ssPublicationDate && params.ssPublicationDate !== null && moment(params.ssPublicationDate).isValid()) {
+                if (params.ssPublicationDate && params.ssPublicationDate !== null && moment(params.ssPublicationDate).isValid()) {
                     _.extend(peerReview, { solutionPublicationDate: new Date(params.ssPublicationDate) });
                 }
 
@@ -310,22 +328,22 @@ peerAssessment.prototype.addPeerReview = function (error, params, files, success
                     }
                     else {
                         console.log('Doc', peerReview);
-                        if(files && files.file) {
+                        if (files && files.file) {
                             var reviewDocuments = null;
                             var sampleSolutions = null;
-                            if(files.file.length == 2){
+                            if (files.file.length == 2) {
                                 reviewDocuments = files.file[0].reviewDocuments
                                 sampleSolutions = files.file[1].sampleSolutions
                             } else if (files.file.length == 1) {
-                                if(files.file[0] && files.file[0].reviewDocuments) {
+                                if (files.file[0] && files.file[0].reviewDocuments) {
                                     reviewDocuments = files.file[0].reviewDocuments
                                 }
-                                if(files.file[0] && files.file[0].sampleSolutions) {
+                                if (files.file[0] && files.file[0].sampleSolutions) {
                                     sampleSolutions = files.file[0].sampleSolutions
                                 }
                             }
 
-                            if(reviewDocuments && reviewDocuments.constructor == Array) {
+                            if (reviewDocuments && reviewDocuments.constructor == Array) {
                                 for (var i in reviewDocuments) {
                                     var f = reviewDocuments[i];
                                     self.saveResourceFile(error,
@@ -345,21 +363,21 @@ peerAssessment.prototype.addPeerReview = function (error, params, files, success
                                         })
                                 }
                             }
-                            if(sampleSolutions && sampleSolutions.constructor == Array) {
+                            if (sampleSolutions && sampleSolutions.constructor == Array) {
                                 for (var i in sampleSolutions) {
                                     var f = sampleSolutions[i];
                                     self.saveResourceFile(error,
                                         f,
                                         'sampleSolution',
                                         peerReview,
-                                        function(fn) {
+                                        function (fn) {
                                             var duplicate = false;
-                                            _.each(peerReview.solutions, function(doc){
-                                                if(fn == doc) {
+                                            _.each(peerReview.solutions, function (doc) {
+                                                if (fn == doc) {
                                                     duplicate = true;
                                                 }
                                             })
-                                            if(!duplicate) {
+                                            if (!duplicate) {
                                                 peerReview.solutions.push(fn);
                                             }
                                         })
@@ -385,19 +403,19 @@ peerAssessment.prototype.addPeerReview = function (error, params, files, success
 }
 
 peerAssessment.prototype.saveResourceFile = function (error, file, type, helper, success) {
-        var fn = '/pa/'+ helper.courseId +'/'+ helper._id+'/'+ type +'/'+ file.name;
-        var dest = appRoot + '/public/'+ fn;
-        try {
-            handleUpload(file, dest, true);
+    var fn = '/pa/' + helper.courseId + '/' + helper._id + '/' + type + '/' + file.name;
+    var dest = appRoot + '/public/' + fn;
+    try {
+        handleUpload(file, dest, true);
 
-        } catch (ex) {
-            error(new Error("Failed uploading"));
-            return;
-        }
+    } catch (ex) {
+        error(new Error("Failed uploading"));
+        return;
+    }
 
-        if (success) {
-            success(fn);
-        }
+    if (success) {
+        success(fn);
+    }
     //}
 }
 

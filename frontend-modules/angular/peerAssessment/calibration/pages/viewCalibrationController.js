@@ -19,7 +19,7 @@ app.controller('ViewCalibrationController', function ($scope, $location, $http, 
             },
             {
                 clickAction: $scope.reviewCalibration, 
-                clickParams: {peerReviewId: $scope.peerReviewId, calibrationId: $scope.calibrationId},
+                clickParams: {peerReviewId: $location.search().pRId, calibrationId: $location.search().cId},
                 title: '<i class="ionicons ion-android-clipboard"></i> &nbsp; REVIEW CALIBRATION',
                 aTitle: 'Review Calibration'
             },

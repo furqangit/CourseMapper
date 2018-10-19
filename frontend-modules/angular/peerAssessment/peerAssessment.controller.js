@@ -199,6 +199,7 @@ app.controller('PeerAssessmentController', function ($scope, $http, courseServic
     }
 
     $scope.reviewCalibration = function (params) {
+        console.log("PARAMS: ", params);
         window.document.location = '#/cid/' + $scope.course._id + '/?tab=peerAssessment&pRId=' + params.peerReviewId + '&vName=reviewCalibration&cId=' + params.calibrationId;
     }
 
