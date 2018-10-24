@@ -13,6 +13,7 @@ var _ = require('lodash');
 var fs = require('fs-extra');
 var moment = require('moment');
 var PeerReview = require('./models/peerReview.js');
+var reviewCalibrations = require('./reviewCalibration.controller.js');
 
 function calibration() {
 
@@ -58,29 +59,30 @@ calibration.prototype.deleteCalibration = function (error, params, success) {
                     { _id: mongoose.Types.ObjectId(params.cId) }
                 ).exec(function (err, doc) {
                     if (!err) {
-                        // var sr = new reviews()
-                        // sr.getReviews(
-                        //     function (err) {
-                        //         error(err)
-                        //     },
-                        //      {
-                        //         calibrationId: mongoose.Types.ObjectId(doc._id)
-                        //     }, function (docs) {
-                        //         _.each(docs, function (doc) {
-                        //             sr.deleteReview(
-                        //                 function (err) {
-                        //                     error(err)
-                        //                 },
-                        //                 {
-                        //                     userId: params.userId,
-                        //                     courseId: params.courseId,
-                        //                     reviewId: mongoose.Types.ObjectId(doc._id)
-                        //                 },
-                        //                 function () {
-                        //                     console.log("Review successfully deleted: " + doc._id)
-                        //                 })
-                        //         })
-                        //     })
+                        var sr = new reviewCalibrations()
+                        sr.getReviewCalibrations(
+                            function (err) {
+                                error(err)
+                            },
+                            {
+                                calibrationId: mongoose.Types.ObjectId(doc._id)
+                            }, function (docs) {
+                                _.each(docs, function (doc) {
+                                    sr.deleteReviewCalibration(
+                                        function (err) {
+                                            console.log("Error: ", err);
+                                            error(err)
+                                        },
+                                        {
+                                            userId: params.userId,
+                                            courseId: params.courseId,
+                                            reviewCalibrationId: mongoose.Types.ObjectId(doc._id)
+                                        },
+                                        function () {
+                                            console.log("Review Calibration successfully deleted: " + doc._id)
+                                        })
+                                })
+                            })
                         _.each(doc.calibrationDocuments, function (docPath) {
                             fs.unlink(appRoot + '/public/' + docPath, function (err) {
                                 if (err) {
@@ -89,7 +91,6 @@ calibration.prototype.deleteCalibration = function (error, params, success) {
                                 debug("File deleted successfully");
                             });
                         })
-
 
                         Calibration.remove(
                             { _id: mongoose.Types.ObjectId(params.cId) }
@@ -209,14 +210,19 @@ calibration.prototype.addCalibration = function (error, params, files, success) 
                 teacherComments: params.teacherComments
             });
 
+            var f = null;
             if (files && files.file) {
                 var calibrationDocuments = null;
                 if (files.file[0] && files.file[0].calibrationDocuments) {
                     calibrationDocuments = files.file[0].calibrationDocuments;
                 }
+                //only taking first document (no multi documents)
+                f = calibrationDocuments[0];
+            } else {
+                var err = new Error('Please upload a valid solution file.')
+                error(err);
+                return;
             }
-            //only taking first document (no multi documents)
-            var f = calibrationDocuments[0];
 
             self.saveResourceFile(error,
                 f,

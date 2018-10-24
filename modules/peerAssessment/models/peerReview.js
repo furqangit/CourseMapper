@@ -22,6 +22,10 @@ var peerReviewSchema = new mongoose.Schema({
         loop: {
             type: String,
             enum: ['single','multiple']
+        },        
+        calibration: {
+            type: String,
+            enum: ['on','off']
         },
         reviewStartDate: { type: Date },
         reviewEndDate: { type: Date },
@@ -44,7 +48,7 @@ var peerReviewSchema = new mongoose.Schema({
     },
     dateAdded: { type: Date },
     dateUpdated: { type: Date }
-});
+},{ usePushEach: true });
 
 peerReviewSchema.pre('save', function(next) {
     var now = new Date();

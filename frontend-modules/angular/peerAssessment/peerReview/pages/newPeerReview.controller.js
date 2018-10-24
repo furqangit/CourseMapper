@@ -26,7 +26,9 @@ app.controller('NewPeerReviewController', function ($scope, $http, toastr, $wind
         publicationDate: null,
         dueDate: null,
         ssPublicationDate: null,
-        reviewSettings: {}
+        reviewSettings: {
+            calibration: "off"
+        }
     }
     $scope.reviewDocuments = false;
     $scope.sampleSolutions = false;

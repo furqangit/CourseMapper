@@ -132,6 +132,22 @@
                                     <% include ../components/blindness %>
                                     <% include ../components/reviewPercentage %>
                                     <% include ../components/rubrics/rubrics %>
+                                    <fieldset>
+                                        <div class="form-group">
+                                            <label class="col-sm-5 control-label">Calibration</label>
+                                            <div class="col-sm-6">
+                                                <div class="col-sm-2">
+                                                    <label class="radio-inline"><input type="radio" name="calibration" ng-model="newAssignObj.reviewSettings.calibration" value="on" ng-click="toggleView('single')">On</label>
+                                                </div>
+                                                <div class="col-sm-2">
+                                                    <label class="radio-inline"><input type="radio" name="calibration" ng-model="newAssignObj.reviewSettings.calibration" value="off" ng-click="toggleView('multiple')">Off</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-1 pa-tooltip">
+                                                <i class="ionicons ion-ios-help" title="States the calibration of the solutions"></i>
+                                            </div>
+                                        </div>
+                                    </fieldset>
                                 </div>
                             </div>
                             </form>

@@ -84,7 +84,6 @@ app.controller('ReviewCalibrationController', function ($scope, $http, toastr, $
     }
 
     $scope.submitReview = function () {
-        console.log("________", $scope.reviewCalibrationObject)
         $scope.isLoading = true;
         var url = "";
         var method = "";
@@ -119,8 +118,9 @@ app.controller('ReviewCalibrationController', function ($scope, $http, toastr, $
                     toastr.error(data.errors[0] || 'Failed');
                 }
                 $scope.isLoading = false;
+                window.history.back();
                 // if (data.peer == cId) {
-                //     window.location.reload();
+                //     
                 // } else {
                 //     window.history.replaceState({}, "", '#/cid/' + $scope.course._id + '?tab=peerAssessment&vName=reviewSubmission&cId=' + data.reviewId)
                 //     //window.document.location = '#/cid/' + $scope.course._id + '?tab=peerAssessment&vName=reviewSubmission&cId=' + data.reviewId;
