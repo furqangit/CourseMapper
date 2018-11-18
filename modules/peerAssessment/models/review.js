@@ -20,7 +20,7 @@ var reviewSchema = new mongoose.Schema({
     dateAdded: { type: Date },
     reviewRatings : mongoose.Schema.Types.Mixed,
     dateUpdated: { type: Date }
-});
+},{ usePushEach: true });
 
 reviewSchema.pre('save', function(next){
     var now = new Date();

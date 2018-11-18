@@ -14,7 +14,7 @@ var reviewCalibrationSchema = new mongoose.Schema({
     courseId: { type: mongoose.Schema.Types.ObjectId, ref: 'courses', required: true },
     dateAdded: { type: Date },
     dateUpdated: { type: Date }
-});
+},{ usePushEach: true });
 
 reviewCalibrationSchema.pre('save', function(next){
     var now = new Date();

@@ -17,7 +17,7 @@ var solutionsSchema = new mongoose.Schema({
     dateAdded: { type: Date },
     dateUpdated: { type: Date },
     
-});
+},{ usePushEach: true });
 
 solutionsSchema.pre('save', function(next){
     var now = new Date();

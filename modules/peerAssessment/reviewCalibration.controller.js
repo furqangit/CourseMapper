@@ -55,7 +55,7 @@ reviewCalibration.prototype.getReviewCalibration = function (error, params, succ
             if (err) {
                 error(err)
             } else {
-                console.log(doc)
+                // console.log(doc)
                 success(doc)
             }
         })
@@ -75,7 +75,7 @@ reviewCalibration.prototype.getReviewCalibrationByUserId = function (error, para
             if (err) {
                 error(err)
             } else {
-                console.log(doc)
+                // console.log(doc)
                 success(doc)
             }
         })
@@ -87,20 +87,16 @@ reviewCalibration.prototype.addReviewCalibration = function (error, params, succ
         return;
     }
 
-    userHelper.isAuthorized(error,
-        {
-            userId: params.userId,
-            courseId: params.courseId
-        },
-
-        async(function (isAllowed) {
-            if (isAllowed) {
-
-                var calibration = await(Calibration.findOne({ _id: params.calibrationId }).exec())
+    userHelper.isEnrolledAsync({ userId: params.userId, courseId: params.courseId }).then(function (isAuthorized) {
+        if (!isAuthorized) {
+            error(helper.createError401());
+            return
+        } else {
+            Calibration.findOne({ _id: params.calibrationId }).exec().then(function(calibration){
                 if (!calibration) {
                     error(new Error('Invalid Calibration'))
                 }
-
+    
                 var reviewCalibration = new ReviewCalibration({
                     peerReviewId: params.peerReviewId,
                     courseId: params.courseId,
@@ -112,7 +108,7 @@ reviewCalibration.prototype.addReviewCalibration = function (error, params, succ
                     marksObtained: params.marksObtained,
                     rubricReview: params.rubricReview
                 })
-
+    
                 reviewCalibration.save(function (err, res) {
                     if (err) {
                         debug('failed saving new reviewCalibration');
@@ -123,11 +119,9 @@ reviewCalibration.prototype.addReviewCalibration = function (error, params, succ
                         success();
                     }
                 });
-            } else {
-                error(helper.createError401());
-            }
-        })
-    )
+            })
+        }
+    })
 }
 
 reviewCalibration.prototype.editReviewCalibration = function (error, params, success) {
@@ -139,29 +133,31 @@ reviewCalibration.prototype.editReviewCalibration = function (error, params, suc
 
     ReviewCalibration.findOne({
         _id: params.reviewCalibrationId
-    }).populate('calibrationId').exec(async(function (err, reviewCalibration) {
-        var isAdmin = await(userHelper.isCourseAuthorizedAsync({ userId: params.userId, courseId: params.courseId }))
+    }).populate('peerReviewId').exec(async(function (err, reviewCalibration) {
 
-        if ((reviewCalibration.reviewedBy.toString != params.userId.toString) && !isAdmin) {
+        var isAuthorized = await(userHelper.isEnrolledAsync({ userId: params.userId, courseId: params.courseId }))
+
+        if ((reviewCalibration.reviewedBy.toString != params.userId.toString) && !isAuthorized) {
             debug("Unauthorized to perform this functionality");
             error(helper.createError401())
             return
             // Start working from here
             // Admin check should be added and review date as well
         }
-        if (!isAdmin) {
-            var now = new Date();
-            var reviewSettings = reviewCalibration.peerReviewId.reviewSettings;
-            var isReviewTime = false
-            if (now > reviewSettings.reviewStartDate && now < reviewSettings.reviewEndDate) {
-                isReviewTime = true
-            }
-            if (!isReviewTime) {
-                var err = new Error('Deadline has passed. Cannot submit review now')
-                error(err)
-                return
-            }
-        }
+
+        // if (isAuthorized) {
+        //     var now = new Date();
+        //     var reviewSettings = reviewCalibration.peerReviewId.reviewSettings;
+        //     var isReviewTime = false
+        //     if (now > reviewSettings.reviewStartDate && now < reviewSettings.reviewEndDate) {
+        //         isReviewTime = true
+        //     }
+        //     if (!isReviewTime) {
+        //         var err = new Error('Deadline has passed. Cannot submit review now')
+        //         error(err)
+        //         return
+        //     }
+        // }
         reviewCalibration.comments = params.comments
         reviewCalibration.marksObtained = params.marksObtained
         reviewCalibration.rubricReview = params.rubricReview

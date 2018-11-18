@@ -1,4 +1,4 @@
-app.controller('ReviewCalibrationController', function ($scope, $http, toastr, $window, $location, ActionBarService, Upload) {
+app.controller('ReviewCalibrationController', function ($scope, $http, toastr, $window, $location, ActionBarService, Upload, authService) {
     cId = $location.search().cId;
     pRId = $location.search().pRId
     if (!cId || !pRId) {
@@ -38,25 +38,46 @@ app.controller('ReviewCalibrationController', function ($scope, $http, toastr, $
                 $scope.peerReview = peerReview.data.peerReview;
                 $scope.rubrics = $scope.peerReview.reviewSettings.rubrics;
 
-                if ($scope.reviewCalibration) {
-                    //Edit case
-                    console.log("Edit Case");
-                    operationCase = "edit";
-                    $scope.reviewCalibrationId = $scope.reviewCalibration._id;
-                    $scope.reviewCalibrationObject = $scope.reviewCalibration;
-                } else {
-                    //Add Case
-
-                    console.log("Add Case");
-                    operationCase = "add";
-                    $scope.reviewCalibrationObject = {
-                        marksObtained: 0,
-                        comments: "",
-                        isAdminReview: true,
-                        rubricReview: {}
+                $scope.viewCalibrationObject = null;
+                var url = '/api/peerassessment/' + $scope.course._id + '/peerreviews/' + pRId + '/calibration/'+ cId;
+                $http.get(url).then(function (response) {
+                    var calibration = response.data.calibration;
+                    if (calibration.calibrationDocuments && calibration.calibrationDocuments.length > 0) {
+                        calibration.displayCalibrationDocumentsList = [];
+                        _.each(calibration.calibrationDocuments, function (docName) {
+                            var temp = {};
+                            temp.link = window.location.origin + docName;
+                            var tempArr = docName.split('/');
+                            temp.name = tempArr[tempArr.length - 1];
+                            calibration.displayCalibrationDocumentsList.push(temp);
+                        })
                     }
+                    $scope.viewCalibrationObject = calibration;
 
-                }
+                    if ($scope.reviewCalibration) {
+                        //Edit case
+                        console.log("Edit Case");
+                        operationCase = "edit";
+                        $scope.reviewCalibrationId = $scope.reviewCalibration._id;
+                        $scope.reviewCalibrationObject = $scope.reviewCalibration;
+                    } else {
+                        //Add Case
+    
+                        console.log("Add Case");
+                        operationCase = "add";
+                        $scope.reviewCalibrationObject = {
+                            marksObtained: 0,
+                            comments: "",
+                            isAdminReview: authService.isAdmin(),
+                            rubricReview: {}
+                        }
+    
+                    }
+                }, function (err) {
+                    // Check for proper error message later
+                    toastr.error('Internal Server Error. Please try again later.');
+                });
+
             }, function (err) {
                 console.log('Internal Server Error. Please try again later.');
                 toastr.error('Internal Server Error. Please try again later.');
@@ -119,13 +140,7 @@ app.controller('ReviewCalibrationController', function ($scope, $http, toastr, $
                 }
                 $scope.isLoading = false;
                 window.history.back();
-                // if (data.peer == cId) {
-                //     
-                // } else {
-                //     window.history.replaceState({}, "", '#/cid/' + $scope.course._id + '?tab=peerAssessment&vName=reviewSubmission&cId=' + data.reviewId)
-                //     //window.document.location = '#/cid/' + $scope.course._id + '?tab=peerAssessment&vName=reviewSubmission&cId=' + data.reviewId;
-                //     window.location.reload();
-                // }
+
             })
             .error(function (data) {
                 toastr.error('Internal Server Error');
