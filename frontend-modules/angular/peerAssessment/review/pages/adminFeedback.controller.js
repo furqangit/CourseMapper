@@ -12,12 +12,12 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
         title: '<i class="ionicons ion-arrow-return-left"></i> &nbsp; BACK',
         aTitle: 'Back'
     }, {
-        separator: true
-    }, {
-        clickAction: $scope.redirectPRHome,
-        title: '<i class="ionicons ion-home"></i> &nbsp; PEER REVIEWS HOME',
-        aTitle: 'Peer Review Home'
-    });
+            separator: true
+        }, {
+            clickAction: $scope.redirectPRHome,
+            title: '<i class="ionicons ion-home"></i> &nbsp; PEER REVIEWS HOME',
+            aTitle: 'Peer Review Home'
+        });
 
     var fetchSolution = function () {
         var url = '/api/peerassessment/' + $scope.course._id + '/solutions/' + vId;
@@ -38,6 +38,15 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
                 console.log('Solution', solution)
                 fetchPeerReviewsRating(); // Uncomment when needed
                 fetchPeerReverseReviewsRating();
+                if ($scope.reviews.length > 0) {
+                    $scope.isCalibration = $scope.reviews[0].peerReviewId.reviewSettings.calibration == 'on';
+                    if ($scope.isCalibration) {
+                        calibrate();
+                    }
+                    getAggregatedAccuracies();
+                }
+
+
 
 
             }
@@ -151,77 +160,77 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
 
                     var check2 = (data[i].reviewRatings); //sometime there are no reverse review submited
                     if (check2 !== undefined) {
-                        
+
 
                         var ratingArray = Object.entries(data[i].reviewRatings);
                         //totalNum = Object.size(data[i].reviewRatings); ///////////////////////////////
                         for (var j = 0; j < totalPeerReviews; j++) {
-                            
+
                             PeerReviewsProp = data[j].peerReviewId.reviewSettings.rubrics[j]._id;
                             var ratingV = read_prop(data[i].reviewRatings, PeerReviewsProp); //to see which rubrics Admin Checked 
-                            
+
                             ratingMean = ratingMean + +ratingV;
                             //ratingMean = ratingMean + +ratingArray[j][1];
                         }
-                       
-                        if(!isNaN(ratingMean / totalPeerReviews))
-                        ratingMean = ratingMean / totalPeerReviews;
-                                 else
-                                 ratingMean = 0
 
-                        
-                    var finalValue = (ratingMean / 5) * 100; //because Maximum rating is 5, and converting it to %
+                        if (!isNaN(ratingMean / totalPeerReviews))
+                            ratingMean = ratingMean / totalPeerReviews;
+                        else
+                            ratingMean = 0
+
+
+                        var finalValue = (ratingMean / 5) * 100; //because Maximum rating is 5, and converting it to %
                         newReviewRatingObj[userName] = finalValue.toFixed(0);
-                        ratingMean = 0; 
-                    }      
+                        ratingMean = 0;
+                    }
                 }
-                    // var url = '/api/peerassessment/' + $scope.course._id + '/reviewsRatings?rName=ReverseReviewsRating&solutionId=' + vId + '&cUserId=' + userRatingToPlot[i].assignedTo._id + '&peerReviewId=' + $scope.solution.peerReviewId._id; 
-                    // $http.get(url).then(function (response) {
-                    //     console.log('reviewsRatings', response)
-                    //     console.log('userRating', userRating)
-                    // if (response.data.reviews && response.data.reviews.length) {
-                    //     var data = response.data.reviews;
+                // var url = '/api/peerassessment/' + $scope.course._id + '/reviewsRatings?rName=ReverseReviewsRating&solutionId=' + vId + '&cUserId=' + userRatingToPlot[i].assignedTo._id + '&peerReviewId=' + $scope.solution.peerReviewId._id; 
+                // $http.get(url).then(function (response) {
+                //     console.log('reviewsRatings', response)
+                //     console.log('userRating', userRating)
+                // if (response.data.reviews && response.data.reviews.length) {
+                //     var data = response.data.reviews;
 
-                    //     var totalReviews = data.length;
-                    //     var totalReviewsToDivide = data.length;
-                    //         var check = (data[0].reviewRatings);
-                    //         // if (check !== undefined) {
-                    //         $scope.reviewsRatingNum = 1;
-                    //         var totalNum = 0;
-                    //         var ratingMean = 0;
-                    //         var ratingMeanAll = 0;
-                    //         for (var i = 0; i < totalReviews; i++) {
-                    //             var check2 = (data[i].reviewRatings); //sometime there are reviews assigned but not submited by users
-                    //             if (check2 !== undefined) {
-                    //                 var ratingArray = Object.entries(data[i].reviewRatings);
-                    //                 totalNum = Object.size(data[i].reviewRatings);
-                    //                 for (var j = 0; j < totalNum; j++) {
-                    //                     ratingMean = ratingMean + +ratingArray[j][1];
-                    //                 }
-                    //                 ratingMean = ratingMean / totalNum;
-                    //                 ratingMeanAll = ratingMeanAll + +ratingMean;
-                    //                 ratingMean = 0; 
-                    //             } else {
-                    //                 totalReviewsToDivide--;
-                    //             }
+                //     var totalReviews = data.length;
+                //     var totalReviewsToDivide = data.length;
+                //         var check = (data[0].reviewRatings);
+                //         // if (check !== undefined) {
+                //         $scope.reviewsRatingNum = 1;
+                //         var totalNum = 0;
+                //         var ratingMean = 0;
+                //         var ratingMeanAll = 0;
+                //         for (var i = 0; i < totalReviews; i++) {
+                //             var check2 = (data[i].reviewRatings); //sometime there are reviews assigned but not submited by users
+                //             if (check2 !== undefined) {
+                //                 var ratingArray = Object.entries(data[i].reviewRatings);
+                //                 totalNum = Object.size(data[i].reviewRatings);
+                //                 for (var j = 0; j < totalNum; j++) {
+                //                     ratingMean = ratingMean + +ratingArray[j][1];
+                //                 }
+                //                 ratingMean = ratingMean / totalNum;
+                //                 ratingMeanAll = ratingMeanAll + +ratingMean;
+                //                 ratingMean = 0; 
+                //             } else {
+                //                 totalReviewsToDivide--;
+                //             }
 
-                    //             userName = data[i].submittedBy.displayName;
-                    //         }
-                    //         if(!isNaN(ratingMeanAll / totalReviewsToDivide))
-                    //             ratingMeanAll = ratingMeanAll / totalReviewsToDivide;
-                    //         else
-                    //         ratingMeanAll = 0
+                //             userName = data[i].submittedBy.displayName;
+                //         }
+                //         if(!isNaN(ratingMeanAll / totalReviewsToDivide))
+                //             ratingMeanAll = ratingMeanAll / totalReviewsToDivide;
+                //         else
+                //         ratingMeanAll = 0
 
-                    //         var finalValue = (ratingMeanAll / 5) * 100; //because Maximum rating is 5, and converting it to %
-                    //         newReviewRatingObj[userName] = finalValue.toFixed(0); // this object is used in the bar chart below to show the % of reverse reviews
-                    //         userName = "";
-                    //}
+                //         var finalValue = (ratingMeanAll / 5) * 100; //because Maximum rating is 5, and converting it to %
+                //         newReviewRatingObj[userName] = finalValue.toFixed(0); // this object is used in the bar chart below to show the % of reverse reviews
+                //         userName = "";
+                //}
 
-                    // }, function (err) {
-                    //     // Check for proper error message later
-                    //     toastr.error('Internal Server Error. Please try again later.');
-                    // })
-                
+                // }, function (err) {
+                //     // Check for proper error message later
+                //     toastr.error('Internal Server Error. Please try again later.');
+                // })
+
             }
         }, function (err) {
             // Check for proper error message later
@@ -438,8 +447,8 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
                 });
 
             texts.filter(function (d) {
-                    return arrayToBeHighlight.indexOf(d.text) != -1;
-                })
+                return arrayToBeHighlight.indexOf(d.text) != -1;
+            })
                 .each(function (d) {
                     var bbox = this.getBBox(),
                         trans = d3.select(this).attr('transform');
@@ -520,8 +529,8 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
                 });
 
             texts.filter(function (d) {
-                    return arrayToBeHighlight.indexOf(d.text) != -1;
-                })
+                return arrayToBeHighlight.indexOf(d.text) != -1;
+            })
                 .each(function (d) {
                     var bbox = this.getBBox(),
                         trans = d3.select(this).attr('transform');
@@ -1093,7 +1102,6 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
     }
 
     $scope.submitReview = function () {
-        console.log($scope.review)
         $scope.isLoading = true;
         var uploadParams;
         if ($scope.existingReview) {
@@ -1122,30 +1130,40 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
         }
 
         $scope.upload = Upload.upload(
-                uploadParams
-            )
+            uploadParams
+        )
             .progress(function (evt) {
                 if (!evt.config.file)
                     return;
 
                 $scope.progress = parseInt(100.0 * evt.loaded / evt.total);
-                // console.log("Progress", $scope.progress);
+                console.log("Progress", $scope.progress);
             })
             .success(function (data) {
+                console.log("success block");
                 $scope.progress = 0;
                 if (data.result) {
+                    console.log("success data: ", data);
+                    console.log("reviews length: ", $scope.reviews.length);
+                    if ($scope.reviews.length > 0) {
+                        createAccuracyMetric();
+                    }
+                    $scope.isLoading = false;
                     toastr.success('Successfully Saved');
                 } else {
+
+                    $scope.isLoading = false;
+                    console.log("Error in data: ", data);
                     toastr.error(data.errors[0] || 'Failed');
                 }
-                $scope.isLoading = false;
-                window.location.reload();
+                //window.location.reload();
             })
             .error(function (data) {
+                console.log("Error: ", data);
+                $scope.isLoading = false;
                 toastr.error('Internal Server Error');
                 $scope.errors = data.errors;
                 $scope.progress = 0;
-                $scope.isLoading = false;
             });
     }
 
@@ -1252,9 +1270,9 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
 
 
         var uniqueList = ret.filter(function (allItems, i, a) //remove duplications
-            {
-                return i == a.indexOf(allItems);
-            });
+        {
+            return i == a.indexOf(allItems);
+        });
 
 
 
@@ -1296,5 +1314,174 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
                 review.displayDocumentsList.push(temp);
             })
         }
+    }
+
+    var calibrate = function () {
+        console.log("Starting to calibrate...");
+        var peerReview = $scope.solution.peerReviewId;
+        //get textual calibration score
+        var url = '/api/peerassessment/' + $scope.course._id + '/peerReview/' + peerReview._id + '/calibrationScore'
+        var uploadParams;
+        $http.get(url).then(function (response) {
+            $scope.calibrationId = response.data[0].review.calibrationId._id;
+            var url2 = '/api/peerassessment/' + $scope.course._id + '/peerreviews/' + peerReview._id + '/calibration/' + $scope.calibrationId + '/getCalibrationScores';
+            $http.get(url2).then(function (scores) {
+                if (scores.data.calibrationScores.length == 0) {
+
+                    response.data.forEach(element => {
+
+                        uploadParams = {
+                            method: 'POST',
+                            url: '/api/peerassessment/' + $scope.course._id + '/peerreviews/' + peerReview._id + '/calibration/' + element.review.calibrationId._id + '/reviewCalibration/' + element.review._id + '/addCalibrationScore',
+                            fields: { accuracy: element.accuracy, match: element.match }
+                        };
+
+                        $scope.upload = Upload.upload(
+                            uploadParams
+                        )
+                            .progress(function (evt) {
+                                if (!evt.config.file)
+                                    return;
+                                $scope.progress = parseInt(100.0 * evt.loaded / evt.total);
+                            })
+                            .success(function (data) {
+                                $scope.progress = 0;
+                                if (!data.result) {
+                                    toastr.error(data.errors[0] || 'Failed');
+                                }
+
+                                getCalibrationScores();
+                                $scope.isLoading = false;
+
+                            })
+                            .error(function (data) {
+                                toastr.error('Internal Server Error');
+                                $scope.errors = data.errors;
+                                $scope.progress = 0;
+                                $scope.isLoading = false;
+                            });
+                    });
+                } else {
+                    createCalibrationScoreObject(scores);
+                }
+            }, function (err) {
+                // Check for proper error message later
+                toastr.error('Internal Server Error. Please try again later.');
+            })
+        }, function (err) {
+            // Check for proper error message later
+            toastr.error('Internal Server Error. Please try again later.');
+        })
+    }
+
+    function createCalibrationScoreObject(scores) {
+        var calibrationScores = scores.data.calibrationScores;
+        $scope.calibrationAccuracy = {};
+        $scope.calibrationMatch = {};
+        calibrationScores.forEach(score => {
+            $scope.calibrationAccuracy[score.reviewCalibrationId.reviewedBy] = score.accuracy * 100
+            $scope.calibrationMatch[score.reviewCalibrationId.reviewedBy] = score.match.toFixed(2);
+        });
+    }
+
+    function getCalibrationScores() {
+        var url = '/api/peerassessment/' + $scope.course._id + '/peerreviews/' + $scope.solution.peerReviewId._id + '/calibration/' + $scope.calibrationId + '/getCalibrationScores';
+        $http.get(url).then(function (scores) {
+            createCalibrationScoreObject(scores);
+        }, function (err) {
+            // Check for proper error message later
+            toastr.error('Error in getting calibration scores.', err);
+        });
+    }
+
+    function getAccuracy(adminReview, studentReview) {
+        var marksGivenByTeacher = adminReview.marksObtained;
+        var maxInaccuracy = adminReview.peerReviewId.totalMarks;
+        var difference = marksGivenByTeacher - studentReview.marksObtained;
+        var inaccuracy = Math.abs(difference);
+        inaccuracy = Math.abs(difference);
+        var accuracy = 1 - (inaccuracy / maxInaccuracy);
+        return accuracy;
+    }
+
+    function getAccuracyData(teacherReview, studentReviews) {
+        var accuracy = 0;
+        var accuracyArray = [];
+        studentReviews.forEach(review => {
+            accuracy = getAccuracy(teacherReview, review);
+            accuracyArray.push({ peerReviewId: review.peerReviewId._id, solutionId: review.solutionId._id, peerId: review.assignedTo._id, accuracy: accuracy });
+        });
+        return accuracyArray;
+    }
+
+    var createAccuracyMetric = function () {
+        var teacherReview = $scope.review;
+        var studentReviews = $scope.reviews;
+        //calculate accuracy between user and teacher grades
+        var accuracyArray = getAccuracyData(teacherReview, studentReviews);
+        var uploadParams = {};
+        var url = '';
+        var method = '';
+        console.log("Accuracy Array: ", accuracyArray);
+        accuracyArray.forEach(element => {
+            console.log("Adding/Updating accuracy data...");
+            if (!$scope.existingReview) {
+                method = "POST";
+                url = '/api/peerassessment/' + $scope.course._id + '/peerreviews/' + element.peerReviewId + '/solution/' + element.solutionId + '/peer/' + element.peerId + '/addAccuracy'
+            }
+            else {
+                method = "PUT";
+                url = '/api/peerassessment/' + $scope.course._id + '/peerreviews/' + element.peerReviewId + '/solution/' + element.solutionId + '/peer/' + element.peerId + '/updateAccuracy'
+            }
+
+            uploadParams = {
+                method: method,
+                url: url,
+                fields: { accuracy: element.accuracy }
+            };
+
+            $scope.upload = Upload.upload(
+                uploadParams
+            )
+                .progress(function (evt) {
+                    if (!evt.config.file)
+                        return;
+                    $scope.progress = parseInt(100.0 * evt.loaded / evt.total);
+                })
+                .success(function (data) {
+                    $scope.progress = 0;
+                    if (!data.result) {
+                        toastr.error(data.errors[0] || 'Failed');
+                    }
+                    $scope.isLoading = false;
+                    console.log("Accuracy added/updated successfully!");
+                })
+                .error(function (data) {
+                    toastr.error('Internal Server Error');
+                    $scope.errors = data.errors;
+                    $scope.progress = 0;
+                    $scope.isLoading = false;
+                });
+        });
+    }
+
+    var getAggregatedAccuracies = function () {
+        var url = '';
+        var accuracyObj = {};
+        $scope.reviews.forEach(review => {
+            console.log("getting accuracy for reviewer: ", review.assignedTo._id);
+            url = '/api/peerassessment/' + $scope.course._id + '/peer/' + review.assignedTo._id + '/getAggregatedAccuracy';
+            $http.get(url).then(function (response) {
+                if (response.data && response.data.accuracy) {
+                    accuracyObj[response.data.accuracy._id] = (response.data.accuracy.overallAccuracy * 100).toFixed(2);
+                }
+            }, function (err) {
+                console.log("HERE COMES THE ERRIR", err);
+                // Check for proper error message later
+                toastr.error('Internal Server Error. Please try again later.');
+            })
+        });
+        $scope.accuracyData = accuracyObj;
+        console.log("^^^^^^^^^^^^^^^^^^^^^^", $scope.accuracyData);
     }
 })

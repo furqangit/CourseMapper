@@ -47,6 +47,22 @@ var getFrequency = function (doc) {
     return frequencies;
 }
 
+function compare(adminReview, userReview) {
+    var textLenght = (adminReview.length + userReview.length);
+    var Levenshtein_Dis = LevenshteinDistance(adminReview, userReview);
+    //Levenshtein distance
+    var levenshteinSimilarity = 100 - ((Levenshtein_Dis / textLenght) * 100); //conversion into % from distance
+
+    //Cosine similarity
+    var cosineSimilarity = CosineDistance.compareTwoStrings(adminReview, userReview) * 100;
+
+    //Sørensen–Dice coefficient
+    var diceCoefficientSimilarity = DiceCoefficientDistance(adminReview, userReview) * 100;
+
+    var mean = (cosineSimilarity + diceCoefficientSimilarity + levenshteinSimilarity) / 3;
+    return mean;
+}
+
 peerAssessmentTextAnalyzer.prototype.getAnalyzedTextReport = function (error, text, success) {
     try {
 
@@ -81,8 +97,8 @@ peerAssessmentTextAnalyzer.prototype.getAnalyzedTextReport = function (error, te
             var jaccardSimilarity = JaccardDistance.index(text_A, text_B) * 100;
         }
 
-        if(jaccardSimilarity > 95){ //because of handling worst cases
-            jaccardSimilarity = (cosineSimilarity + diceCoefficientSimilarity + levenshteinSimilarity)/3;
+        if (jaccardSimilarity > 95) { //because of handling worst cases
+            jaccardSimilarity = (cosineSimilarity + diceCoefficientSimilarity + levenshteinSimilarity) / 3;
         }
 
         var meanValue = (cosineSimilarity + diceCoefficientSimilarity + levenshteinSimilarity + jaccardSimilarity) / 4;
@@ -103,9 +119,8 @@ peerAssessmentTextAnalyzer.prototype.getAnalyzedTextReport = function (error, te
 
 peerAssessmentTextAnalyzer.prototype.getAnalyzedRewiewReport = function (error, reviews, success) {
     try {
-        if(reviews && reviews.length && reviews[0].peerReviewId.reviewSettings.rubrics && reviews[0].peerReviewId.reviewSettings.rubrics.length)
-        {
-           var totalReviews = reviews[0].peerReviewId.reviewSettings.rubrics.length;
+        if (reviews && reviews.length && reviews[0].peerReviewId.reviewSettings.rubrics && reviews[0].peerReviewId.reviewSettings.rubrics.length) {
+            var totalReviews = reviews[0].peerReviewId.reviewSettings.rubrics.length;
             //var totalReviews =  Object.keys(reviews[0].rubricReview).length;
             var reviewsCount = reviews.length;
 
@@ -113,52 +128,52 @@ peerAssessmentTextAnalyzer.prototype.getAnalyzedRewiewReport = function (error, 
                 for (var j = 0; j < totalReviews; j++) {
                     var rubricReview = reviews[i].rubricReview;
                     if (rubricReview.hasOwnProperty(reviews[i].peerReviewId.reviewSettings.rubrics[j]._id)) {
-                        if(!reviews[i].rubricNewReview){
+                        if (!reviews[i].rubricNewReview) {
                             reviews[i].rubricNewReview = {};
                         }
-                            reviews[i].rubricNewReview[reviews[i].peerReviewId.reviewSettings.rubrics[j]._id + ":" + reviews[i].peerReviewId.reviewSettings.rubrics[j].title] = reviews[i].rubricReview[reviews[i].peerReviewId.reviewSettings.rubrics[j]._id];
-                            //console.log("reviews[i].peerReviewId.reviewSettings.rubrics[j].title);
-                        }
-                    } //delete reviews[i].rubricReview[reviews[i].peerReviewId.reviewSettings.rubrics[k]._id];
+                        reviews[i].rubricNewReview[reviews[i].peerReviewId.reviewSettings.rubrics[j]._id + ":" + reviews[i].peerReviewId.reviewSettings.rubrics[j].title] = reviews[i].rubricReview[reviews[i].peerReviewId.reviewSettings.rubrics[j]._id];
+                        //console.log("reviews[i].peerReviewId.reviewSettings.rubrics[j].title);
+                    }
+                } //delete reviews[i].rubricReview[reviews[i].peerReviewId.reviewSettings.rubrics[k]._id];
             }
 
 
             var combination = combinations(reviewsCount); //possible combinations of the reviews
             var loop = 0;
             var rewiewObject = {};
-            var check =loop;
+            var check = loop;
             var count = 0;
 
-            if(reviewsCount == 2) //no possible combinations for two users 
+            if (reviewsCount == 2) //no possible combinations for two users 
             {
                 for (var i = 0; i < totalReviews; i++) {
-                            var rubricReview1 = reviews[0].rubricNewReview;
-                            var rubricReview2 = reviews[1].rubricNewReview;
-    
-                            var sortedKeys = Object.keys(rubricReview1).sort(); //sorting the object keys
-                            var str1 = rubricReview1[sortedKeys[i]]; //fetch 
-    
-                            var sortedKeys2 = Object.keys(rubricReview2).sort(); //sorting the object keys
-                            var str2 = rubricReview2[sortedKeys2[i]];
+                    var rubricReview1 = reviews[0].rubricNewReview;
+                    var rubricReview2 = reviews[1].rubricNewReview;
 
-                            var Levenshtein_Dis = LevenshteinDistance(str1, str2);
-                            var textLenght = (str1.length + str2.length);
-    
-                            //Levenshtein distance
-                            var levenshteinSimilarity = 100 - ((Levenshtein_Dis / textLenght) * 100); //conversion into % from distance
-    
-                            //Cosine similarity
-                            var cosineSimilarity = CosineDistance.compareTwoStrings(str1, str2) * 100;
-    
-                            //Sørensen–Dice coefficient
-                            var diceCoefficientSimilarity = DiceCoefficientDistance(str1, str2) * 100;
-    
-                            var mean = (cosineSimilarity + diceCoefficientSimilarity + levenshteinSimilarity)/3;
-                            
-                            rewiewObject["R"+ (1) +"|R"+ (2) +"-"+ sortedKeys2[i] + ":" + mean.toFixed(2) + "*R"+ (1) +"="+ reviews[0].assignedTo.displayName +":R"+ (2) +"="+ reviews[1].assignedTo.displayName] = mean.toFixed(2); 
+                    var sortedKeys = Object.keys(rubricReview1).sort(); //sorting the object keys
+                    var str1 = rubricReview1[sortedKeys[i]]; //fetch 
+
+                    var sortedKeys2 = Object.keys(rubricReview2).sort(); //sorting the object keys
+                    var str2 = rubricReview2[sortedKeys2[i]];
+
+                    var Levenshtein_Dis = LevenshteinDistance(str1, str2);
+                    var textLenght = (str1.length + str2.length);
+
+                    //Levenshtein distance
+                    var levenshteinSimilarity = 100 - ((Levenshtein_Dis / textLenght) * 100); //conversion into % from distance
+
+                    //Cosine similarity
+                    var cosineSimilarity = CosineDistance.compareTwoStrings(str1, str2) * 100;
+
+                    //Sørensen–Dice coefficient
+                    var diceCoefficientSimilarity = DiceCoefficientDistance(str1, str2) * 100;
+
+                    var mean = (cosineSimilarity + diceCoefficientSimilarity + levenshteinSimilarity) / 3;
+
+                    rewiewObject["R" + (1) + "|R" + (2) + "-" + sortedKeys2[i] + ":" + mean.toFixed(2) + "*R" + (1) + "=" + reviews[0].assignedTo.displayName + ":R" + (2) + "=" + reviews[1].assignedTo.displayName] = mean.toFixed(2);
                 }
             }
-            else{
+            else {
                 for (var i = 0; i < totalReviews; i++) {
                     var var1 = 0;
                     for (var j = 0; j < combination; j++) { //for managing combinations
@@ -170,45 +185,107 @@ peerAssessmentTextAnalyzer.prototype.getAnalyzedRewiewReport = function (error, 
                         for (var k = j; k < reviewsCount - 1; k++) {   //reviewsCount
                             var rubricReview1 = reviews[j].rubricNewReview;
                             var rubricReview2 = reviews[k + 1].rubricNewReview;
-    
+
                             var sortedKeys = Object.keys(rubricReview1).sort(); //sorting the object keys
                             var str1 = rubricReview1[sortedKeys[loop]]; //fetch 
-    
+
                             var sortedKeys2 = Object.keys(rubricReview2).sort(); //sorting the object keys
                             var str2 = rubricReview2[sortedKeys2[loop]];
                             count++;
 
                             var Levenshtein_Dis = LevenshteinDistance(str1, str2);
                             var textLenght = (str1.length + str2.length);
-    
+
                             //Levenshtein distance
                             var levenshteinSimilarity = 100 - ((Levenshtein_Dis / textLenght) * 100); //conversion into % from distance
-    
+
                             //Cosine similarity
                             var cosineSimilarity = CosineDistance.compareTwoStrings(str1, str2) * 100;
-    
+
                             //Sørensen–Dice coefficient
                             var diceCoefficientSimilarity = DiceCoefficientDistance(str1, str2) * 100;
-    
-                            var mean = (cosineSimilarity + diceCoefficientSimilarity + levenshteinSimilarity)/3;
-                            
-                            rewiewObject["R"+ (j+1) +"|R"+ (k+2) +"-"+ sortedKeys2[loop] + ":" + mean.toFixed(2) + "*R"+ (j+1) +"="+ reviews[j].assignedTo.displayName +":R"+ (k+2) +"="+ reviews[k + 1].assignedTo.displayName] = mean.toFixed(2);
+
+                            var mean = (cosineSimilarity + diceCoefficientSimilarity + levenshteinSimilarity) / 3;
+
+                            rewiewObject["R" + (j + 1) + "|R" + (k + 2) + "-" + sortedKeys2[loop] + ":" + mean.toFixed(2) + "*R" + (j + 1) + "=" + reviews[j].assignedTo.displayName + ":R" + (k + 2) + "=" + reviews[k + 1].assignedTo.displayName] = mean.toFixed(2);
                         }
                     }
                 }
 
             }
             success(rewiewObject);
-    }
-    else{
-        success(reviews); 
-    }
+        }
+        else {
+            success(reviews);
+        }
 
     } catch (err) {
         console.log("Analyzing Rewiew Error: ", err.message);
     }
 }
 
+// function getAccuracy(adminReview, studentReviews){
+//     var marksGivenByTeacher = adminReview.marksObtained;
+//     console.log("MARKS GIVEN BY TEACHER", marksGivenByTeacher);
+//     var maxInaccuracy = adminReview.peerReviewId.totalMarks;
+//     console.log("MAX INACCURACY", maxInaccuracy);
+//     var accuracyArray = [];
+//     var inaccuracy = 0;
+//     var accuracy = 0;
+//     var difference = 0;
+//     studentReviews.forEach(review => {
+//         difference = marksGivenByTeacher - review.marksObtained;
+//         inaccuracy = Math.abs(difference);
+//         console.log("INACCURACY:", inaccuracy)
+//         inaccuracy = Math.abs(difference);
+//         console.log("INACCURACY:", inaccuracy)
+//         accuracy = 1 - (inaccuracy/maxInaccuracy);
+//         accuracyArray.push({review: review, accuracy: accuracy});
+//     });
+//     return accuracyArray;
+// }
+function getAccuracy(adminReview, studentReview) {
+    var marksGivenByTeacher = adminReview.marksObtained;
+    var maxInaccuracy = adminReview.peerReviewId.totalMarks;
+    var difference = marksGivenByTeacher - studentReview.marksObtained;
+    var inaccuracy = Math.abs(difference);
+    inaccuracy = Math.abs(difference);
+    var accuracy = 1 - (inaccuracy / maxInaccuracy);
+    return accuracy;
+}
+
+peerAssessmentTextAnalyzer.prototype.getCalibrationScore = function (error, adminReview, userReviews, success) {
+    try {
+        var scoreArray = [];
+        var sum = 0;
+        var adminRubrics;
+        var userRubrics;
+        var score = {};            
+        var numOfRubrics = 0
+        var average;
+        var accuracy 
+        userReviews.forEach(review => {
+            adminRubrics = adminReview.rubricReview;
+            userRubrics = review.rubricReview;
+
+            Object.keys(adminRubrics).forEach(function (rubric) {
+                numOfRubrics++;
+                score[rubric] = compare(adminRubrics[rubric], userRubrics[rubric]);
+            });
+
+            Object.keys(score).forEach(function (value) {
+                sum += score[value];
+            });
+
+            average = sum / numOfRubrics;
+            accuracy = getAccuracy(adminReview, review);
+            scoreArray.push({ review: review, match: average, accuracy: accuracy });
+        });
+        success(scoreArray);
+    } catch (err) {
+        console.log("Error in calibration of reviews: ", err.message);
+    }
+}
 
 function CleanNullElementsInTheArray(text) { //Function for cleaning array from empty elements
     var cleanedArray = new Array();
@@ -250,10 +327,11 @@ function toObject(arr) {
 }
 
 function combinations(num) {
-    if (num == 2) { return 2; } else if (num == 3) { return 3;  } else if (num == 4) { return 6; } 
-    else if (num == 5) {  return 10; } else if (num == 6) { return 15; } else if (num == 7) { return 21;
-    } else if (num == 8) { return 28; } else if (num == 9) { return 36; } else if (num == 10) {  return 45; } 
-    else {  return 0; }
+    if (num == 2) { return 2; } else if (num == 3) { return 3; } else if (num == 4) { return 6; }
+    else if (num == 5) { return 10; } else if (num == 6) { return 15; } else if (num == 7) {
+        return 21;
+    } else if (num == 8) { return 28; } else if (num == 9) { return 36; } else if (num == 10) { return 45; }
+    else { return 0; }
 }
 
 module.exports = peerAssessmentTextAnalyzer;

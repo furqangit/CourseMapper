@@ -254,6 +254,34 @@
 
 
                                 <div class="panel panel-default">
+                                    <div class="panel-heading">Credibility Metrics</div>
+                                    <div class="panel-body">
+                                        <fieldset>
+                                            <div ng-show="!reviews || reviews.length == 0">
+                                                <h5>No reviews available currently</h5>
+                                            </div>
+                                            <table class="table table-hover" ng-show="reviews.length > 0">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Student Name</th>
+                                                        <th ng-if = "isCalibration">Calibration Marks Accuracy</th>
+                                                        <th ng-if = "isCalibration">Calibration Rubrics Match</th>
+                                                        <th>Reliability</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr ng-repeat="review in reviews" >
+                                                        <td>{{review.assignedTo.displayName}}</td>
+                                                        <td ng-if = "isCalibration">{{calibrationAccuracy[review.assignedTo._id]}} %</td>
+                                                        <td ng-if = "isCalibration">{{calibrationMatch[review.assignedTo._id]}} %</td>
+                                                        <td>{{accuracyData[review.assignedTo._id]}} %</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </fieldset>
+                                    </div>
+                                </div>
+                                <div class="panel panel-default">
                                     <div class="panel-heading">Review</div>
                                     <div class="panel-body">
                                         <fieldset>

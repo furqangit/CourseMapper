@@ -3,6 +3,8 @@ var config = require('config');
 var appRoot = require('app-root-path');
 var solutions = require(appRoot + '/modules/peerAssessment/solutions.controller.js');
 var calibration = require(appRoot + '/modules/peerAssessment/calibration.controller.js');
+var calibrationScore = require(appRoot + '/modules/peerAssessment/calibrationScore.controller.js');
+var accuracyMetric = require(appRoot + '/modules/peerAssessment/accuracyMetric.controller.js');
 var peerAssessment = require(appRoot + '/modules/peerAssessment/peerAssessment.controller.js');
 var reviews = require(appRoot + '/modules/peerAssessment/reviews.controller.js');
 var reviewCalibration = require(appRoot + '/modules/peerAssessment/reviewCalibration.controller.js');
@@ -684,6 +686,71 @@ router.get('/peerassessment/:courseId/reviews/:id', helper.l2pAuth, helper.ensur
             });
         }
     )
+}))
+
+/**
+ * 
+ * 
+ * GET
+ * fetch calibration score for a calibration review
+ * 
+ */
+router.get('/peerassessment/:courseId/peerReview/:pRId/calibrationScore', helper.l2pAuth, helper.ensureAuthenticated, async(function (req, res) {
+    if (!req.user) {
+        return res.status(401).send('Unauthorized');
+    }
+
+    var c = new calibration();
+    req.body.courseId = mongoose.Types.ObjectId(req.params.courseId);
+    req.body.peerReviewId = mongoose.Types.ObjectId(req.params.pRId);
+    var isAdmin = await(userHelper.isCourseAuthorizedAsync({
+        userId: req.user._id,
+        courseId: req.params.courseId
+    }))
+    c.getCalibrations(
+        function (err) {
+            helper.resReturn(err, res);
+        },
+        req.body,
+        function (calibrations) {
+            //************************ */
+            req.body.calibrationId = calibrations[0]._id;
+
+            debug('Request body =>', req.body)
+
+            var rc = new reviewCalibration();
+            rc.getReviewCalibrations(
+                function (err) {
+                    helper.resReturn(err, res);
+                },
+                req.body,
+                function (reviewCalibrations) {
+                    var adminReview = reviewCalibrations.find(function (element) {
+                        return element.isAdminReview == true;
+                    });
+                    var userReviews = reviewCalibrations.filter(function (element) {
+                        return element.isAdminReview != true;
+                    });
+
+                    var rs = new peerAssessmentTextAnalyzer();
+                    rs.getCalibrationScore(
+                        function (err) {
+                            console.log(err);
+                            helper.resReturn(err, res);
+                        },
+                        adminReview,
+                        userReviews,
+                        function (result) {
+                            res.status(200).json(result);
+                        }
+                    );
+
+                }
+            )
+            //********************************** */
+        }
+    )
+
 }))
 /***************************************************************************/
 /*********************************Solutions*********************************/
@@ -1462,7 +1529,7 @@ router.get('/peerassessment/:courseId/calibration/:cId/reviews', helper.l2pAuth,
     if (!req.user) {
         return res.status(401).send('Unauthorized');
     }
-    
+
     req.body.courseId = mongoose.Types.ObjectId(req.params.courseId);
     req.body.calibrationId = mongoose.Types.ObjectId(req.params.cId);
 
@@ -1538,6 +1605,288 @@ router.get('/peerassessment/:courseId/reviewCalibration/:id', helper.l2pAuth, he
             });
         }
     )
+}))
+
+/***************************************************************************/
+/******************** Calibration Score************************************/
+/***************************************************************************/
+
+/**
+ * GET
+ * calculate the calibration score
+ */
+router.get('/peerassessment/:courseId/calibration/:cId/reviews', helper.l2pAuth, helper.ensureAuthenticated, async(function (req, res) {
+    if (!req.user) {
+        return res.status(401).send('Unauthorized');
+    }
+
+    var c = new calibration();
+    req.body.courseId = mongoose.Types.ObjectId(req.params.courseId);
+    req.body.peerReviewId = mongoose.Types.ObjectId(req.params.pRId);
+    var isAdmin = await(userHelper.isCourseAuthorizedAsync({
+        userId: req.user._id,
+        courseId: req.params.courseId
+    }))
+    c.getCalibrations(
+        function (err) {
+            helper.resReturn(err, res);
+        },
+        req.body,
+        function (calibrations) {
+            //************************ */
+            req.body.calibrationId = calibrations[0]._id;
+
+            debug('Request body =>', req.body)
+
+            var rc = new reviewCalibration();
+            rc.getReviewCalibrations(
+                function (err) {
+                    helper.resReturn(err, res);
+                },
+                req.body,
+                function (reviewCalibrations) {
+                    var adminReview = reviewCalibrations.find(function (element) {
+                        return element.isAdminReview == true;
+                    });
+                    var userReviews = reviewCalibrations.filter(function (element) {
+                        return element.isAdminReview != true;
+                    });
+
+                    var rs = new peerAssessmentTextAnalyzer();
+                    rs.getCalibrationScore(
+                        function (err) {
+                            console.log(err);
+                            helper.resReturn(err, res);
+                        },
+                        adminReview,
+                        userReviews,
+                        function (score) {
+                            res.status(200).json({
+                                result: true,
+                                score: score
+                            });
+                        }
+                    );
+
+                }
+            )
+            //********************************** */
+        }
+    )
+
+}))
+
+
+/**
+ * POST
+ * add calibrationScore
+ */
+router.post('/peerassessment/:courseId/peerreviews/:pRId/calibration/:cId/reviewCalibration/:rCId/addCalibrationScore', helper.l2pAuth, helper.ensureAuthenticated,
+    multipartyMiddleware,
+    function (req, res) {
+        if (!req.user) {
+            return res.status(401).send('Unauthorized');
+        }
+
+        req.body.userId = mongoose.Types.ObjectId(req.user._id);
+        req.body.courseId = mongoose.Types.ObjectId(req.params.courseId);
+        req.body.peerReviewId = mongoose.Types.ObjectId(req.params.pRId);
+        req.body.calibrationId = mongoose.Types.ObjectId(req.params.cId);
+        req.body.reviewCalibrationId = mongoose.Types.ObjectId(req.params.rCId);
+        var cs = new calibrationScore();
+        cs.addCalibrationScore(
+            function (err) {
+                console.log(err);
+                res.status(200).json({
+                    result: false,
+                    errors: [err.message]
+                });
+            },
+            // parameters
+            req.body,
+            function () {
+                res.status(200).json({
+                    result: true
+                });
+            }
+        )
+    });
+
+/**
+* GET
+* fetch calibrationScore
+*/
+router.get('/peerassessment/:courseId/peerreviews/:pRId/calibration/:cId/getCalibrationScores', helper.l2pAuth, helper.ensureAuthenticated, async(function (req, res) {
+    if (!req.user) {
+        return res.status(401).send('Unauthorized');
+    }
+
+    req.body.courseId = mongoose.Types.ObjectId(req.params.courseId);
+    req.body.peerReviewId = mongoose.Types.ObjectId(req.params.pRId);
+    req.body.calibrationId = mongoose.Types.ObjectId(req.params.cId);
+
+
+    var cs = new calibrationScore();
+    cs.getCalibrationScores(
+        function (err) {
+            helper.resReturn(err, res);
+        },
+        req.body,
+        function (calibrationScores) {
+            res.status(200).json({
+                result: true,
+                calibrationScores: calibrationScores
+            });
+        }
+    )
+}))
+
+/***************************************************************************/
+/******************** ACCURACY METRIC ************************************/
+/***************************************************************************/
+/**
+ * POST
+ * add accuracy
+ */
+router.post('/peerassessment/:courseId/peerreviews/:pRId/solution/:sId/peer/:pId/addAccuracy', helper.l2pAuth, helper.ensureAuthenticated,
+    multipartyMiddleware,
+    function (req, res) {
+        if (!req.user) {
+            return res.status(401).send('Unauthorized');
+        }
+        console.log("API call received to add accuracy!");
+        req.body.peerId = mongoose.Types.ObjectId(req.params.pId);
+        req.body.courseId = mongoose.Types.ObjectId(req.params.courseId);
+        req.body.peerReviewId = mongoose.Types.ObjectId(req.params.pRId);
+        req.body.solutionId = mongoose.Types.ObjectId(req.params.sId);
+        var am = new accuracyMetric();
+        am.getAccuracy(
+            function (err) {
+                console.log("check 'If Accuracy Exists' countered some error", err);
+                helper.resReturn(err, res);
+            },
+            req.body,
+            function (data) {
+                if (!data) {
+                    am.addAccuracy(
+                        function (err) {
+                            console.log("Error in adding accuracy:", err);
+                            res.status(200).json({
+                                result: false,
+                                errors: [err.message]
+                            });
+                        },
+                        // parameters
+                        req.body,
+                        function () {
+                            console.log("Accuracy added successfully!");
+                            res.status(200).json({
+                                result: true
+                            });
+                        }
+                    )
+                }
+            }
+        )
+    });
+
+/**
+ * PUT
+ * edit accuracy
+ */
+router.put('/peerassessment/:courseId/peerreviews/:pRId/solution/:sId/peer/:pId/updateAccuracy', helper.l2pAuth, helper.ensureAuthenticated,
+    multipartyMiddleware,
+    function (req, res) {
+        if (!req.user) {
+            return res.status(401).send('Unauthorized');
+        }
+
+        console.log("API call received to update accuracy!");
+        req.body.peerId = mongoose.Types.ObjectId(req.params.pId);
+        req.body.courseId = mongoose.Types.ObjectId(req.params.courseId);
+        req.body.peerReviewId = mongoose.Types.ObjectId(req.params.pRId);
+        req.body.solutionId = mongoose.Types.ObjectId(req.params.sId);
+        var am = new accuracyMetric();
+        am.editAccuracy(
+            function (err) {
+                console.log("Error in updating accuracy:", err);
+                res.status(200).json({
+                    result: false,
+                    errors: [err.message]
+                });
+            },
+            // parameters
+            req.body,
+            function () {
+                console.log("Accuracy updated successfully!");
+                res.status(200).json({
+                    result: true
+                });
+            }
+        )
+    });
+
+
+/**
+* GET
+* calculate the overall Accuracy of a peer
+*/
+router.get('/peerassessment/:courseId/peer/:pId/getAggregatedAccuracy', helper.l2pAuth, helper.ensureAuthenticated, async(function (req, res) {
+    if (!req.user) {
+        return res.status(401).send('Unauthorized');
+    }
+
+    req.body.peerId = mongoose.Types.ObjectId(req.params.pId);
+    req.body.courseId = mongoose.Types.ObjectId(req.params.courseId);
+    var am = new accuracyMetric();
+    console.log("Calling modal......");
+    am.getAggregatedAccuracy(
+        function (err) {
+            console.log("error fething the aggregated result", err);
+
+            helper.resReturn(err, res);
+        },
+        req.body,
+        function (accuracy) {
+            console.log("here is the Accuracy: ", accuracy);
+            res.status(200).json({
+                result: true,
+                accuracy: accuracy
+            });
+        }
+    )
+
+}))
+
+/**
+* GET
+* calculate the overall efficiency of a peer
+*/
+router.get('/peerassessment/:courseId/peer/:pId/getAggregatedEfficiency', helper.l2pAuth, helper.ensureAuthenticated, async(function (req, res) {
+    if (!req.user) {
+        return res.status(401).send('Unauthorized');
+    }
+
+    req.body.peerId = mongoose.Types.ObjectId(req.params.pId);
+    req.body.courseId = mongoose.Types.ObjectId(req.params.courseId);
+    var am = new accuracyMetric();
+    console.log("Calling modal......");
+    am.getAggregatedAccuracy(
+        function (err) {
+            console.log("error fething the aggregated result", err);
+
+            helper.resReturn(err, res);
+        },
+        req.body,
+        function (accuracy) {
+            console.log("here is the Accuracy: ", accuracy);
+            res.status(200).json({
+                result: true,
+                accuracy: accuracy
+            });
+        }
+    )
+
 }))
 
 module.exports = router;
