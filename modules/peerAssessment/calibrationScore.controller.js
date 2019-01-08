@@ -35,7 +35,14 @@ calibrationScore.prototype.getCalibrationScore = function (error, params, succes
 };
 
 calibrationScore.prototype.getCalibrationScores = function (error, params, success) {
-    CalibrationScore.find(params).populate('reviewCalibrationId').lean().exec(function (err, docs) {
+    CalibrationScore.find(params).populate({
+        path: 'reviewCalibrationId',
+        model: 'reviewCalibration',
+        populate: {
+            path: 'reviewedBy',
+            model: 'users'
+        }
+    }).lean().exec(function (err, docs) {
         if (!err) {
             success(docs);
         } else {
@@ -83,25 +90,25 @@ calibrationScore.prototype.addCalibrationScore = function (error, params, succes
     if (!helper.checkRequiredParams(params, ['courseId', 'peerReviewId', 'userId', 'calibrationId', 'reviewCalibrationId'], error)) {
         return;
     }
-            var calibrationScore = new CalibrationScore({
-                accuracy: params.accuracy,
-                match: params.match,
-                calibrationId: mongoose.Types.ObjectId(params.calibrationId),
-                reviewCalibrationId: mongoose.Types.ObjectId(params.reviewCalibrationId),
-                createdBy: mongoose.Types.ObjectId(params.userId),
-                courseId: mongoose.Types.ObjectId(params.courseId),
-                peerReviewId: mongoose.Types.ObjectId(params.peerReviewId),
-            });
+    var calibrationScore = new CalibrationScore({
+        accuracy: params.accuracy,
+        match: params.match,
+        calibrationId: mongoose.Types.ObjectId(params.calibrationId),
+        reviewCalibrationId: mongoose.Types.ObjectId(params.reviewCalibrationId),
+        createdBy: mongoose.Types.ObjectId(params.userId),
+        courseId: mongoose.Types.ObjectId(params.courseId),
+        peerReviewId: mongoose.Types.ObjectId(params.peerReviewId),
+    });
 
-            calibrationScore.save(function (err, data) {
-                if (err) {
-                    console.log('err', err);
-                    error(err);
-                }
-                else {
-                    success(data, "Calibration Score");
-                }
-            });
+    calibrationScore.save(function (err, data) {
+        if (err) {
+            console.log('err', err);
+            error(err);
+        }
+        else {
+            success(data, "Calibration Score");
+        }
+    });
 
 }
 

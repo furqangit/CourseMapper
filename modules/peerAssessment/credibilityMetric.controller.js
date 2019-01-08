@@ -2,7 +2,7 @@ var config = require('config');
 var Calibration = require('./models/calibration.js');
 var PeerReview = require('./models/peerReview.js');
 var Accuracy = require('./models/accuracy.js');
-var Review = require('./models/review.js');
+var Review = require('./reviews.controller.js');
 var UserCourses = require('../catalogs/userCourses.js')
 var appRoot = require('app-root-path');
 var users = require('../accounts/users.js');
@@ -16,23 +16,13 @@ var async = require('asyncawait/async');
 var await = require('asyncawait/await');
 var _ = require('lodash');
 var fs = require('fs-extra');
+var DecisionTree = require('decision-tree');
 
-function accuracyMetric() {
+function credibilityMetric() {
 
 }
 
-accuracyMetric.prototype.getAccuracies = function (error, params, success) {
-    console.log("PARAMS: ", params);
-    Accuracy.find(params).exec(function (err, docs) {
-        if (err) {
-            error(err)
-        } else {
-            success(docs)
-        }
-    })
-}
-
-accuracyMetric.prototype.getAccuracy = function (error, params, success) {
+credibilityMetric.prototype.getAccuracy = function (error, params, success) {
     Accuracy.findOne(params).exec(function (err, doc) {
         if (err) {
             error(err)
@@ -43,8 +33,7 @@ accuracyMetric.prototype.getAccuracy = function (error, params, success) {
 }
 
 
-accuracyMetric.prototype.addAccuracy = function (error, params, success) {
-    console.log("Adding accuracy...");
+credibilityMetric.prototype.addAccuracy = function (error, params, success) {
     var self = this;
     if (!helper.checkRequiredParams(params, ['courseId', 'peerReviewId', 'peerId', 'solutionId'], error)) {
         return;
@@ -60,18 +49,16 @@ accuracyMetric.prototype.addAccuracy = function (error, params, success) {
 
     accuracy.save(function (err, res) {
         if (err) {
-            debug('failed saving new accuracyMetric');
+            debug('failed saving new credibilityMetric');
             error(err);
         }
         else {
-            debug('Accuracy saved successfully');
             success();
         }
     });
 }
 
-accuracyMetric.prototype.editAccuracy = function (error, params, success) {
-    console.log("Updating accuracy...");
+credibilityMetric.prototype.editAccuracy = function (error, params, success) {
     var self = this;
 
     if (!helper.checkRequiredParams(params, ['courseId', 'peerReviewId', 'peerId', 'solutionId'], error)) {
@@ -81,21 +68,21 @@ accuracyMetric.prototype.editAccuracy = function (error, params, success) {
     try {
         self.getAccuracy(error, { peerId: params.peerId, solutionId: params.solutionId }, function (accuracyObj) {
             if (accuracyObj) {
-                console.log("Accuracy object retrieved to update...");
                 accuracyObj.accuracy = params.accuracy;
                 accuracyObj.save(function (err, doc) {
                     if (err) {
-                        console.log('Failed updating Accuracy');
+                        console.log('Failed updating Accuracy:', err);
                         error(err);
                     }
                     else {
-                        debug('Accuracy updated successfully');
                         success();
                     }
                 });
             } else {
-                console.log("Accuracy doesn't exist, now adding...");
                 self.addAccuracy(error, params, function () {
+                    if(error){
+                        helper.createError404("Accuracy");
+                    }
                     success();
                 });
             }
@@ -107,7 +94,7 @@ accuracyMetric.prototype.editAccuracy = function (error, params, success) {
     }
 }
 
-accuracyMetric.prototype.getAggregatedAccuracy = function (error, params, success) {
+credibilityMetric.prototype.getAggregatedAccuracy = function (error, params, success) {
     try {
         var cursor = Accuracy.aggregate([
             {
@@ -125,11 +112,7 @@ accuracyMetric.prototype.getAggregatedAccuracy = function (error, params, succes
                 }
             }
         ]).cursor({ batchSize: 1000 }).exec();
-
-        console.log("executed.....", cursor);
         cursor.on('data', function (doc) {
-
-            console.log("result.....", doc);
             success(doc);
         });
 
@@ -139,4 +122,83 @@ accuracyMetric.prototype.getAggregatedAccuracy = function (error, params, succes
 
 }
 
-module.exports = accuracyMetric;
+credibilityMetric.prototype.getAggregatedEfficiency = function (error, params, success) { 
+    try {
+        var r = new Review();
+        var ratingCount = 0;
+        var sum = 0;
+        r.getReviewsForEfficiency(error, params, function (response) {
+
+            var reviewRatings;
+            response.forEach(review => {
+                if (review.reviewRatings) {
+                    reviewRatings = review.reviewRatings;
+                    Object.keys(reviewRatings).forEach(function (rubric) {
+                        ratingCount++;
+                        sum += Number(reviewRatings[rubric]);
+                    });
+                }
+            });
+            var avg = sum / ratingCount;
+            success(avg);
+        })
+    } catch (err) {
+        console.log("Error in getting efficiencies: ", err.message);
+    }
+
+}
+
+credibilityMetric.prototype.getStudentGrade = function (error, params, success) {
+    try {
+        var r = new Review();
+        var grade = 0;
+        var total = 0
+        r.getReviewsForGrade(error, params, function (response) {
+
+            response.forEach(review => {
+                grade += review.marksObtained;
+                total += review.peerReviewId.totalMarks;
+            });
+            success(grade / total * 100);
+
+        })
+    } catch (err) {
+        console.log("Error in getting efficiencies: ", err.message);
+    }
+
+}
+
+credibilityMetric.prototype.getDecisionTree = function(error, params, success){
+    var training_data = [
+        {"tg":80, "sg":"85"},
+        {"tg":70, "sg":"73"},
+        {"tg":60, "sg":"58"},
+        {"tg":50, "sg":"56"},
+        {"tg":90, "sg":"94"},
+        {"tg":85, "sg":"84"},
+        {"tg":75, "sg":"77"},
+        {"tg":65, "sg":"65"},
+        {"tg":55, "sg":"51"},
+    ];
+
+    var test_data = [
+        {"tg":80, "sg":"95"}
+    ];
+
+    var class_name = "tg";
+
+    var features = ["sg"];
+
+    var dt = new DecisionTree(training_data, class_name, features);
+
+    var predicted_class = dt.predict({
+        sg: "95"
+    });
+
+    var accuracy = dt.evaluate(test_data);
+
+    var treeModel = dt.toJSON();
+
+    success({predicted_class: predicted_class, accuracy: accuracy, });
+}
+module.exports = credibilityMetric;

@@ -4,7 +4,7 @@ var appRoot = require('app-root-path');
 var solutions = require(appRoot + '/modules/peerAssessment/solutions.controller.js');
 var calibration = require(appRoot + '/modules/peerAssessment/calibration.controller.js');
 var calibrationScore = require(appRoot + '/modules/peerAssessment/calibrationScore.controller.js');
-var accuracyMetric = require(appRoot + '/modules/peerAssessment/accuracyMetric.controller.js');
+var credibilityMetric = require(appRoot + '/modules/peerAssessment/credibilityMetric.controller.js');
 var peerAssessment = require(appRoot + '/modules/peerAssessment/peerAssessment.controller.js');
 var reviews = require(appRoot + '/modules/peerAssessment/reviews.controller.js');
 var reviewCalibration = require(appRoot + '/modules/peerAssessment/reviewCalibration.controller.js');
@@ -1742,7 +1742,7 @@ router.get('/peerassessment/:courseId/peerreviews/:pRId/calibration/:cId/getCali
 }))
 
 /***************************************************************************/
-/******************** ACCURACY METRIC ************************************/
+/******************** CREDIBILITY METRIC ************************************/
 /***************************************************************************/
 /**
  * POST
@@ -1759,7 +1759,7 @@ router.post('/peerassessment/:courseId/peerreviews/:pRId/solution/:sId/peer/:pId
         req.body.courseId = mongoose.Types.ObjectId(req.params.courseId);
         req.body.peerReviewId = mongoose.Types.ObjectId(req.params.pRId);
         req.body.solutionId = mongoose.Types.ObjectId(req.params.sId);
-        var am = new accuracyMetric();
+        var am = new credibilityMetric();
         am.getAccuracy(
             function (err) {
                 console.log("check 'If Accuracy Exists' countered some error", err);
@@ -1806,7 +1806,7 @@ router.put('/peerassessment/:courseId/peerreviews/:pRId/solution/:sId/peer/:pId/
         req.body.courseId = mongoose.Types.ObjectId(req.params.courseId);
         req.body.peerReviewId = mongoose.Types.ObjectId(req.params.pRId);
         req.body.solutionId = mongoose.Types.ObjectId(req.params.sId);
-        var am = new accuracyMetric();
+        var am = new credibilityMetric();
         am.editAccuracy(
             function (err) {
                 console.log("Error in updating accuracy:", err);
@@ -1838,8 +1838,7 @@ router.get('/peerassessment/:courseId/peer/:pId/getAggregatedAccuracy', helper.l
 
     req.body.peerId = mongoose.Types.ObjectId(req.params.pId);
     req.body.courseId = mongoose.Types.ObjectId(req.params.courseId);
-    var am = new accuracyMetric();
-    console.log("Calling modal......");
+    var am = new credibilityMetric();
     am.getAggregatedAccuracy(
         function (err) {
             console.log("error fething the aggregated result", err);
@@ -1848,7 +1847,6 @@ router.get('/peerassessment/:courseId/peer/:pId/getAggregatedAccuracy', helper.l
         },
         req.body,
         function (accuracy) {
-            console.log("here is the Accuracy: ", accuracy);
             res.status(200).json({
                 result: true,
                 accuracy: accuracy
@@ -1862,27 +1860,83 @@ router.get('/peerassessment/:courseId/peer/:pId/getAggregatedAccuracy', helper.l
 * GET
 * calculate the overall efficiency of a peer
 */
-router.get('/peerassessment/:courseId/peer/:pId/getAggregatedEfficiency', helper.l2pAuth, helper.ensureAuthenticated, async(function (req, res) {
+router.get('/peerassessment/:courseId/peerReview/:pRId/peer/:pId/getAggregatedEfficiency', helper.l2pAuth, helper.ensureAuthenticated, async(function (req, res) {
     if (!req.user) {
         return res.status(401).send('Unauthorized');
     }
 
     req.body.peerId = mongoose.Types.ObjectId(req.params.pId);
     req.body.courseId = mongoose.Types.ObjectId(req.params.courseId);
-    var am = new accuracyMetric();
-    console.log("Calling modal......");
-    am.getAggregatedAccuracy(
+    req.body.peerReviewId = mongoose.Types.ObjectId(req.params.pRId);
+    var ae = new credibilityMetric();
+    ae.getAggregatedEfficiency(
         function (err) {
             console.log("error fething the aggregated result", err);
 
             helper.resReturn(err, res);
         },
         req.body,
-        function (accuracy) {
-            console.log("here is the Accuracy: ", accuracy);
+        function (efficiency) {
             res.status(200).json({
                 result: true,
-                accuracy: accuracy
+                efficiency: efficiency
+            });
+        }
+    )
+
+}))
+
+/**
+* GET
+* calculate the overall grade of a peer
+*/
+router.get('/peerassessment/:courseId/peerReview/:pRId/peer/:pId/getStudentGrade', helper.l2pAuth, helper.ensureAuthenticated, async(function (req, res) {
+    if (!req.user) {
+        return res.status(401).send('Unauthorized');
+    }
+
+    req.body.peerId = mongoose.Types.ObjectId(req.params.pId);
+    req.body.courseId = mongoose.Types.ObjectId(req.params.courseId);
+    req.body.peerReviewId = mongoose.Types.ObjectId(req.params.pRId);
+    var cm = new credibilityMetric();
+    cm.getStudentGrade(
+        function (err) {
+            console.log("error fething the aggregated result", err);
+
+            helper.resReturn(err, res);
+        },
+        req.body,
+        function (grade) {
+            res.status(200).json({
+                result: true,
+                grade: grade
+            });
+        }
+    )
+
+}))
+
+/**
+* GET
+* dummy decision tree
+*/
+router.get('/decisionTree', helper.l2pAuth, helper.ensureAuthenticated, async(function (req, res) {
+    if (!req.user) {
+        return res.status(401).send('Unauthorized');
+    }
+
+    var cm = new credibilityMetric();
+    cm.getDecisionTree(
+        function (err) {
+            console.log("error fething the aggregated result", err);
+
+            helper.resReturn(err, res);
+        },
+        {},
+        function (tree) {
+            res.status(200).json({
+                result: true,
+                tree: tree
             });
         }
     )

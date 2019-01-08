@@ -111,6 +111,28 @@ reviews.prototype.getReviews = function(error, params, success) {
     })
 }
 
+reviews.prototype.getReviewsForEfficiency = function(error, params, success) {
+    Review.find({courseId: params.courseId, assignedTo: params.peerId, isSubmitted: true, isAdminReview : false, peerReviewId : {$ne: params.peerReviewId}})
+    .populate('assignedTo').lean().exec(function(err, docs) {
+        if(err) {
+            error(err)
+        } else {
+            success(docs)
+        }
+    })
+}
+
+reviews.prototype.getReviewsForGrade = function(error, params, success) {
+    Review.find({courseId: params.courseId, submittedBy: params.peerId, isAdminReview: true, isSubmitted: true,  peerReviewId : {$ne: params.peerReviewId}})
+    .populate("peerReviewId").lean().exec(function(err, docs) {
+        if(err) {
+            error(err)
+        } else {
+            success(docs)
+        }
+    })
+}
+
 
 reviews.prototype.getReview = function(error, params, success) {
     Review.findOne(params)

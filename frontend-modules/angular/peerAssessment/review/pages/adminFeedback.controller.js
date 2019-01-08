@@ -35,7 +35,6 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
                     })
                 }
                 $scope.solution = solution;
-                console.log('Solution', solution)
                 fetchPeerReviewsRating(); // Uncomment when needed
                 fetchPeerReverseReviewsRating();
                 if ($scope.reviews.length > 0) {
@@ -44,11 +43,10 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
                         calibrate();
                     }
                     getAggregatedAccuracies();
+                    getAggregatedEfficiencies();
+                    getStudentGrade();
+                    getDecisionTree();
                 }
-
-
-
-
             }
         }, function (err) {
             // Check for proper error message later
@@ -60,7 +58,6 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
     var fetchPeerReviews = function () {
         var url = '/api/peerassessment/' + $scope.course._id + '/reviews?rName=AFCFetchPeerReviews&solutionId=' + vId + '&isAdminReview=false&isSubmitted=true';
         $http.get(url).then(function (response) {
-            console.log('Students', response)
             if (response.data.reviews) {
                 reviews = response.data.reviews
                 var oldReviewsID = []
@@ -97,7 +94,6 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
     var fetchPeerReviewsRating = function () {
         var url = '/api/peerassessment/' + $scope.course._id + '/reviewsRatings?rName=ReviewsRating&solutionId=' + vId + '&cUserId=' + $scope.solution.createdBy + '&isAdminReview=true';
         $http.get(url).then(function (response) {
-            console.log('Students', response)
             if (response.data.reviews) {
                 reviews = response.data.reviews
                 var oldReviewsID = []
@@ -128,7 +124,6 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
     var fetchPeerReverseReviewsRating = function () {
         var url = '/api/peerassessment/' + $scope.course._id + '/reviewsRatings?rName=ReverseReviewsRating1&solutionId=' + vId + '&cUserId=' + $scope.solution.createdBy + '&isReverseReview=true';
         $http.get(url).then(function (response) {
-            console.log('Students', response)
             if (response.data.reviews) {
                 reviews = response.data.reviews
                 var oldReviewsID = []
@@ -150,7 +145,6 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
                 var totalNum = 0;
                 var ratingMean = 0;
                 var totalPeerReviews = 0;
-                console.log('userRating', userRating)
                 for (var i = 0; i < tLoop; i++) {
                     var data = userRatingToPlot;
                     userName = data[i].assignedTo.displayName;
@@ -245,14 +239,12 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
     var fetchAdminReview = function () {
         var url = '/api/peerassessment/' + $scope.course._id + '/reviews?rName=AFCFetchPeerReviews&solutionId=' + vId + '&isAdminReview=true';
         $http.get(url).then(function (response) {
-            console.log('Admin', response)
             $scope.existingReview = false
             if (response.data.reviews && response.data.reviews.length) {
                 var review = response.data.reviews[0]
                 if (review.documents && review.documents.length > 0) {
                     review.displayDocumentsList = [];
                     _.each(review.documents, function (docName) {
-                        console.log(docName)
                         var temp = {};
                         temp.link = window.location.origin + docName;
                         var tempArr = docName.split('/');
@@ -709,7 +701,6 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
     var AnalyzedReviewsToVisualize = function () {
         var url = '/api/peerassessment/' + $scope.course._id + '/analyzedReviews?rName=AFCFetchPeerReviews&solutionId=' + vId + '&isAdminReview=false&isSubmitted=true';
         $http.get(url).then(function (response) {
-            console.log('Students', response)
             if (response.data.AnalyzedRewiewData) {
 
                 var obj = response.data.AnalyzedRewiewData;
@@ -1079,7 +1070,6 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
     }
 
     $scope.deleteSelectedFiles = function (fileName) {
-        console.log('Review Docs Selected', $scope.reviewDocuments, fileName);
         for (var i = 0; i < $scope.reviewDocuments.length; i++) {
             if ($scope.reviewDocuments[i].name == fileName) {
                 $scope.reviewDocuments.splice(i, 1);
@@ -1140,13 +1130,12 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
                 console.log("Progress", $scope.progress);
             })
             .success(function (data) {
-                console.log("success block");
                 $scope.progress = 0;
+                console.log("success data: ", data);
                 if (data.result) {
-                    console.log("success data: ", data);
                     console.log("reviews length: ", $scope.reviews.length);
                     if ($scope.reviews.length > 0) {
-                        createAccuracyMetric();
+                        addAccuracy();
                     }
                     $scope.isLoading = false;
                     toastr.success('Successfully Saved');
@@ -1159,9 +1148,8 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
                 //window.location.reload();
             })
             .error(function (data) {
-                console.log("Error: ", data);
                 $scope.isLoading = false;
-                toastr.error('Internal Server Error');
+                toastr.error('Internal Server Error: ' + data.errors);
                 $scope.errors = data.errors;
                 $scope.progress = 0;
             });
@@ -1184,7 +1172,6 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
                 return true
             })
         }
-        console.log(review);
         $('#viewReviewModal').modal('show');
     }
 
@@ -1317,7 +1304,6 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
     }
 
     var calibrate = function () {
-        console.log("Starting to calibrate...");
         var peerReview = $scope.solution.peerReviewId;
         //get textual calibration score
         var url = '/api/peerassessment/' + $scope.course._id + '/peerReview/' + peerReview._id + '/calibrationScore'
@@ -1377,11 +1363,15 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
     function createCalibrationScoreObject(scores) {
         var calibrationScores = scores.data.calibrationScores;
         $scope.calibrationAccuracy = {};
-        $scope.calibrationMatch = {};
+        $scope.calibrationData = [];
         calibrationScores.forEach(score => {
-            $scope.calibrationAccuracy[score.reviewCalibrationId.reviewedBy] = score.accuracy * 100
-            $scope.calibrationMatch[score.reviewCalibrationId.reviewedBy] = score.match.toFixed(2);
+            if ($scope.solution.createdBy != score.reviewCalibrationId.reviewedBy._id) {
+                $scope.calibrationAccuracy[score.reviewCalibrationId.reviewedBy._id] = score.accuracy * 100
+                $scope.calibrationData.push({ id: score.reviewCalibrationId.reviewedBy._id, displayName: score.reviewCalibrationId.reviewedBy.displayName, match: score.match.toFixed(2), accuracy: score.accuracy * 100 });
+            }
         });
+        DrawBarChartCalibrationMatch();
+        DrawBarChartCalibrationAccuracy();
     }
 
     function getCalibrationScores() {
@@ -1414,7 +1404,7 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
         return accuracyArray;
     }
 
-    var createAccuracyMetric = function () {
+    var addAccuracy = function () {
         var teacherReview = $scope.review;
         var studentReviews = $scope.reviews;
         //calculate accuracy between user and teacher grades
@@ -1422,9 +1412,7 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
         var uploadParams = {};
         var url = '';
         var method = '';
-        console.log("Accuracy Array: ", accuracyArray);
         accuracyArray.forEach(element => {
-            console.log("Adding/Updating accuracy data...");
             if (!$scope.existingReview) {
                 method = "POST";
                 url = '/api/peerassessment/' + $scope.course._id + '/peerreviews/' + element.peerReviewId + '/solution/' + element.solutionId + '/peer/' + element.peerId + '/addAccuracy'
@@ -1469,19 +1457,190 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
         var url = '';
         var accuracyObj = {};
         $scope.reviews.forEach(review => {
-            console.log("getting accuracy for reviewer: ", review.assignedTo._id);
+            accuracyObj[review.assignedTo._id] = '';
             url = '/api/peerassessment/' + $scope.course._id + '/peer/' + review.assignedTo._id + '/getAggregatedAccuracy';
             $http.get(url).then(function (response) {
                 if (response.data && response.data.accuracy) {
                     accuracyObj[response.data.accuracy._id] = (response.data.accuracy.overallAccuracy * 100).toFixed(2);
                 }
             }, function (err) {
-                console.log("HERE COMES THE ERRIR", err);
                 // Check for proper error message later
-                toastr.error('Internal Server Error. Please try again later.');
+                toastr.error('Internal Server Error while fetching aggregated Accuracies.');
             })
         });
         $scope.accuracyData = accuracyObj;
-        console.log("^^^^^^^^^^^^^^^^^^^^^^", $scope.accuracyData);
+    }
+
+    var getAggregatedEfficiencies = function () {
+        var url = '';
+        var efficiencyArray = {};
+        $scope.reviews.forEach(review => {
+            efficiencyArray[review.assignedTo._id] = '';
+            url = '/api/peerassessment/' + $scope.course._id + '/peerReview/' + review.peerReviewId._id + '/peer/' + review.assignedTo._id + '/getAggregatedEfficiency';
+            $http.get(url).then(function (response) {
+                if (response.data && response.data.efficiency) {
+                    efficiencyArray[review.assignedTo._id] = (response.data.efficiency * 100 / 5).toFixed(2);
+                }
+            }, function (err) {
+                // Check for proper error message later
+                toastr.error('Internal Server Error while fetching aggregated Efficiencies');
+            })
+        });
+        $scope.efficiencyData = efficiencyArray;
+    }
+
+    var getStudentGrade = function () {
+        var url = '';
+        var gradeArray = {};
+        $scope.reviews.forEach(review => {
+            gradeArray[review.assignedTo._id] = '';
+            url = '/api/peerassessment/' + $scope.course._id + '/peerReview/' + review.peerReviewId._id + '/peer/' + review.assignedTo._id + '/getStudentGrade';
+            $http.get(url).then(function (response) {
+                if (response.data && response.data.grade) {
+                    gradeArray[review.assignedTo._id] = (response.data.grade).toFixed(2);
+                }
+            }, function (err) {
+                // Check for proper error message later
+                toastr.error('Internal Server Error while fetching aggregated Grades');
+            })
+        });
+        $scope.gradeData = gradeArray;
+    }
+
+    function DrawBarChartCalibrationMatch() {
+        var totalRaters = $scope.calibrationData.length;
+        if (totalRaters > 0) {
+
+            var calObj = {};
+            for (var i = 0; i < totalRaters; i++) {
+                calObj[$scope.calibrationData[i].displayName] = $scope.calibrationData[i].match;
+            }
+
+            var sortedData = [];
+            for (var str in calObj) {
+                sortedData.push([str, calObj[str]]);
+            }
+
+            sortedData.sort(function (a, b) {
+                return a[1] - b[1];
+            });
+
+            var barChart = c3.generate({
+                bindto: '#calibrationMatchBarChart',
+                data: {
+                    columns: [
+
+                    ],
+                    type: 'bar',
+                    labels: true
+                },
+                color: {
+                    pattern: ['#1f77b4', '#2ca02c', '#ff7f0e', '#9467bd', '#aec7e8', '#98df8a', '#d62728', '#ff9896', '#c5b0d5', '#8c564b', '#c49c94', '#e377c2', '#f7b6d2', '#7f7f7f', '#c7c7c7', '#bcbd22', '#dbdb8d', '#17becf', '#9edae5']
+                },
+                bar: {
+                    width: {
+                        ratio: 0.6 // this makes bar width 50% of length between ticks
+                    }
+                },
+                axis: {
+
+                    x: {
+                        type: 'categorized',
+                        tick: {
+                            format: function (x) {
+                                return '';
+                            }
+                        }
+                    }
+                }
+            });
+
+            for (var j = 0; j < sortedData.length; j++) {
+                callSetTimeOut(sortedData, j); //
+            }
+
+            function callSetTimeOut(sortedData, loop) {
+                setTimeout(function () {
+                    barChart.load({
+                        columns: [
+                            [sortedData[loop][0], sortedData[loop][1]]
+                        ]
+                    });
+                }, (loop * 1000));
+            }
+        }
+    }
+
+    function DrawBarChartCalibrationAccuracy() {
+        var totalRaters = $scope.calibrationData.length;
+        if (totalRaters > 0) {
+
+            var calObj = {};
+            for (var i = 0; i < totalRaters; i++) {
+                calObj[$scope.calibrationData[i].displayName] = $scope.calibrationData[i].accuracy;
+            }
+
+            var sortedData = [];
+            for (var str in calObj) {
+                sortedData.push([str, calObj[str]]);
+            }
+
+            sortedData.sort(function (a, b) {
+                return a[1] - b[1];
+            });
+
+            var barChart = c3.generate({
+                bindto: '#calibrationAccuracyBarChart',
+                data: {
+                    columns: [
+
+                    ],
+                    type: 'bar',
+                    labels: true
+                },
+                color: {
+                    pattern: ['#1f77b4', '#2ca02c', '#ff7f0e', '#9467bd', '#aec7e8', '#98df8a', '#d62728', '#ff9896', '#c5b0d5', '#8c564b', '#c49c94', '#e377c2', '#f7b6d2', '#7f7f7f', '#c7c7c7', '#bcbd22', '#dbdb8d', '#17becf', '#9edae5']
+                },
+                bar: {
+                    width: {
+                        ratio: 0.6 // this makes bar width 50% of length between ticks
+                    }
+                },
+                axis: {
+
+                    x: {
+                        type: 'categorized',
+                        tick: {
+                            format: function (x) {
+                                return '';
+                            }
+                        }
+                    }
+                }
+            });
+
+            for (var j = 0; j < sortedData.length; j++) {
+                callSetTimeOut(sortedData, j); //
+            }
+
+            function callSetTimeOut(sortedData, loop) {
+                setTimeout(function () {
+                    barChart.load({
+                        columns: [
+                            [sortedData[loop][0], sortedData[loop][1]]
+                        ]
+                    });
+                }, (loop * 1000));
+            }
+        }
+    }
+
+    var getDecisionTree = function () {
+        url = '/api/decisionTree';
+        $http.get(url).then(function (response) {
+        }, function (err) {
+            // Check for proper error message later
+            toastr.error('Decision Tree failed to fetch');
+        })
     }
 })
