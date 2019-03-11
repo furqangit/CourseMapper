@@ -1,4 +1,4 @@
-app.controller('PeerAssessmentController', function ($scope, $http, courseService, toastr, $window, Upload, $location, ActionBarService) {
+app.controller('PeerAssessmentController', function ($scope, $http, courseService, toastr, $window, Upload, $location, ActionBarService, $q) {
     $scope.course = null;
     $scope.peerreviews = null;
     $scope.vName = null;

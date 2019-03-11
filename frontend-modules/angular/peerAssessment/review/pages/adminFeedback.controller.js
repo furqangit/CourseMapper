@@ -1,4 +1,4 @@
-app.controller('AdminFeedbackController', function ($scope, $http, toastr, $window, $location, $sce, ActionBarService, Upload) {
+app.controller('AdminFeedbackController', function ($scope, $http, toastr, $window, $location, $sce, ActionBarService, Upload, $q) {
 
     vId = $location.search().vId;
     if (!vId) {
@@ -44,7 +44,11 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
                     }
                     getAggregatedAccuracies();
                     getAggregatedEfficiencies();
+                    getReliabilities();
                     getStudentGrade();
+                    setTimeout(function () {
+                        getCredibility();
+                    }, 300);
                     getDecisionTree();
                 }
             }
@@ -1004,6 +1008,7 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
             }
 
             marksMeanValue = (marksMeanValue / reviewArray.length);
+            $scope.meanGrade = marksMeanValue;
 
             var widthNum = 70;
             var subMarks = 100 - marksMeanValue;
@@ -1313,7 +1318,6 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
             var url2 = '/api/peerassessment/' + $scope.course._id + '/peerreviews/' + peerReview._id + '/calibration/' + $scope.calibrationId + '/getCalibrationScores';
             $http.get(url2).then(function (scores) {
                 if (scores.data.calibrationScores.length == 0) {
-
                     response.data.forEach(element => {
 
                         uploadParams = {
@@ -1366,7 +1370,7 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
         $scope.calibrationData = [];
         calibrationScores.forEach(score => {
             if ($scope.solution.createdBy != score.reviewCalibrationId.reviewedBy._id) {
-                $scope.calibrationAccuracy[score.reviewCalibrationId.reviewedBy._id] = score.accuracy * 100
+                $scope.calibrationAccuracy[score.reviewCalibrationId.reviewedBy._id] = score.accuracy.toFixed(2) * 100
                 $scope.calibrationData.push({ id: score.reviewCalibrationId.reviewedBy._id, displayName: score.reviewCalibrationId.reviewedBy.displayName, match: score.match.toFixed(2), accuracy: score.accuracy * 100 });
             }
         });
@@ -1489,22 +1493,51 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
         $scope.efficiencyData = efficiencyArray;
     }
 
+    var getReliabilities = function () {
+        var grades = $scope.reviews.map((r) => { return r.marksObtained });
+        console.log("HERE ARE GRADES: ", grades);
+        var std = math.std(grades)
+        var mean = $scope.meanGrade;
+        var reliabilityObj = {};
+        $scope.reviews.forEach((r) => {
+            var eq = Math.abs(r.marksObtained - mean) / (std * Math.sqrt(2))
+            reliabilityObj[r.assignedTo._id] = ((1 - math.erf(eq)) * 100).toFixed(2)
+        });
+        $scope.reliabilityData = reliabilityObj;
+        console.log("**********************", $scope.reliabilityData);
+    }
+
     var getStudentGrade = function () {
+        // return new Promise(function (resolve, reject) {
+        var requests = [];
         var url = '';
         var gradeArray = {};
+        // var deferred;
         $scope.reviews.forEach(review => {
-            gradeArray[review.assignedTo._id] = '';
             url = '/api/peerassessment/' + $scope.course._id + '/peerReview/' + review.peerReviewId._id + '/peer/' + review.assignedTo._id + '/getStudentGrade';
             $http.get(url).then(function (response) {
+
+                // deferred = $q.defer();
+                // requests.push(deferred);
                 if (response.data && response.data.grade) {
                     gradeArray[review.assignedTo._id] = (response.data.grade).toFixed(2);
+                    // deferred.resolve;
                 }
+
             }, function (err) {
                 // Check for proper error message later
+
+                // deferred.reject;
                 toastr.error('Internal Server Error while fetching aggregated Grades');
             })
+            $scope.gradeData = gradeArray;
+            // });
+            // $q.all(requests).then(function () {
+            //     resolve(gradeArray);
+            // }, function (error) {
+            //     reject(error);
+            // });
         });
-        $scope.gradeData = gradeArray;
     }
 
     function DrawBarChartCalibrationMatch() {
@@ -1634,6 +1667,109 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
             }
         }
     }
+
+
+    var getCredibility = function () {
+        $scope.credibilityData = {};
+        var count;
+
+        $scope.reviews.forEach(review => {
+            $scope.credibilityData[review.assignedTo._id] = 0;
+            count = 0;
+            if ($scope.gradeData && $scope.gradeData.hasOwnProperty(review.assignedTo._id)) {
+                $scope.credibilityData[review.assignedTo._id] += parseFloat($scope.gradeData[review.assignedTo._id]);
+                count++;
+            }
+            if ($scope.accuracyData && $scope.accuracyData[review.assignedTo._id]) {
+                $scope.credibilityData[review.assignedTo._id] += parseFloat($scope.accuracyData[review.assignedTo._id]);
+                count++;
+            }
+            if ($scope.efficiencyData && $scope.efficiencyData[review.assignedTo._id]) {
+                $scope.credibilityData[review.assignedTo._id] += parseFloat($scope.efficiencyData[review.assignedTo._id]);
+                count++;
+            }
+            if ($scope.calibrationAccuracy && $scope.calibrationAccuracy[review.assignedTo._id]) {
+                $scope.credibilityData[review.assignedTo._id] += parseFloat($scope.calibrationAccuracy[review.assignedTo._id]);
+                count++;
+            }
+            if ($scope.reliabilityData && $scope.reliabilityData[review.assignedTo._id]) {
+                $scope.credibilityData[review.assignedTo._id] += parseFloat($scope.reliabilityData[review.assignedTo._id]);
+                count++;
+            }
+
+
+            //making average
+            $scope.credibilityData[review.assignedTo._id] = parseFloat($scope.credibilityData[review.assignedTo._id]) / count;
+        });
+        setTimeout(function () {
+            $scope.$apply();
+        }, 300)  
+        getGrades();
+
+    }
+
+    var getGrades = function () {
+        var final = 0;
+        var totalWeight = 0;
+        $scope.reviews.forEach((review) => {
+            totalWeight += parseFloat($scope.credibilityData[review.assignedTo._id]);
+        })
+
+        $scope.reviews.forEach((review) => {
+            var value = review.marksObtained * parseFloat($scope.credibilityData[review.assignedTo._id]);
+            
+        console.log("marks obtained: "+review.marksObtained, " * weight: ", parseFloat($scope.credibilityData[review.assignedTo._id]));
+            final += value;
+            console.log("__________________", final);
+        })
+        
+        $scope.finalGrade = final/totalWeight;
+        console.log("__________________", $scope.finalGrade);
+        drawFinalGradeChart();
+    }
+
+    function drawFinalGradeChart() {
+        var marksMeanValue = $scope.finalGrade;
+        var widthNum = 70;
+        var subMarks = 100 - marksMeanValue;
+        var chart = c3.generate({
+            bindto: '#predictedGradeBarChart',
+            data: {
+                columns: [
+                    // ["Marks", marksMeanValue],
+                    // ["subMarks", subMarks]
+                    ["subMarks", 100],
+                    ["Marks", 0],
+                ],
+                type: 'donut',
+                colors: {
+                    Marks: '#1f77b4', //Green 059E00
+                    subMarks: '#66c2ff' //Red ff8000 ff7f0e  EE0909
+                },
+                color: function (color, d) {
+                    return color;
+                },
+                order: null
+            },
+            donut: {
+                label: {},
+                title: "Grade: " + marksMeanValue.toFixed(0),
+                width: widthNum
+            }
+        });
+        setTimeout(function () {
+            chart.load({
+                columns: [
+                    ["Marks", marksMeanValue],
+                    ["subMarks", subMarks]
+                ]
+            });
+            chart.legend.hide();
+        }, 0);
+
+
+    }
+
 
     var getDecisionTree = function () {
         url = '/api/decisionTree';

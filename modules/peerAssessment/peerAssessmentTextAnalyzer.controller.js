@@ -260,11 +260,19 @@ peerAssessmentTextAnalyzer.prototype.getCalibrationScore = function (error, admi
         var sum = 0;
         var adminRubrics;
         var userRubrics;
-        var score = {};            
+        var score = {};
         var numOfRubrics = 0
         var average;
-        var accuracy 
+        var accuracy;
+        var inaccuracy;
+        var inaccuracies = userReviews.map((review) => {
+            return { review: review, value: Math.pow(review.marksObtained - adminReview.marksObtained, 2) };
+        })
+        var maximumInaccuracy = inaccuracies.reduce((a,b)=>{
+            return (a.value> b.value)? a: b;
+        })
         userReviews.forEach(review => {
+            accuracy = 0;
             adminRubrics = adminReview.rubricReview;
             userRubrics = review.rubricReview;
 
@@ -278,7 +286,9 @@ peerAssessmentTextAnalyzer.prototype.getCalibrationScore = function (error, admi
             });
 
             average = sum / numOfRubrics;
-            accuracy = getAccuracy(adminReview, review);
+            // inaccuracy = inaccuracies.find((inac)=>{return inac.review._id === review._id});
+            // accuracy = 1 - (inaccuracy.value / maximumInaccuracy.value);
+            accuracy = getAccuracy(adminReview,review);
             scoreArray.push({ review: review, match: average, accuracy: accuracy });
         });
         success(scoreArray);
