@@ -86,6 +86,7 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
 
                 DrawBarChartObtainedMarks(userMarksToPlot);
                 DrawMeanPieChart(userMarksToPlot);
+                $scope.medianGrade = getMedianGrade(userMarksToPlot)
 
             }
         }, function (err) {
@@ -941,12 +942,41 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
                 sortedData.push([str, revObj[str]]);
             }
 
-            sortedData.sort(function (a, b) {
-                return a[1] - b[1];
-            });
+            // sortedData.sort(function (a, b) {
+            //     return a[1] - b[1];
+            // });
 
             var barChart = c3.generate({
                 bindto: '#marksObtainedBarChart',
+                data: {
+                    columns: [
+
+                    ],
+                    type: 'bar',
+                    labels: true
+                },
+                color: {
+                    pattern: ['#1f77b4', '#2ca02c', '#ff7f0e', '#9467bd', '#aec7e8', '#98df8a', '#d62728', '#ff9896', '#c5b0d5', '#8c564b', '#c49c94', '#e377c2', '#f7b6d2', '#7f7f7f', '#c7c7c7', '#bcbd22', '#dbdb8d', '#17becf', '#9edae5']
+                },
+                bar: {
+                    width: {
+                        ratio: 0.6 // this makes bar width 50% of length between ticks
+                    }
+                },
+                axis: {
+
+                    x: {
+                        type: 'categorized',
+                        tick: {
+                            format: function (x) {
+                                return '';
+                            }
+                        }
+                    }
+                }
+            });
+            var barChart2 = c3.generate({
+                bindto: '#marksObtainedBarChart2',
                 data: {
                     columns: [
 
@@ -986,6 +1016,11 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
                             [sortedData[loop][0], sortedData[loop][1]]
                         ]
                     });
+                    barChart2.load({
+                        columns: [
+                            [sortedData[loop][0], sortedData[loop][1]]
+                        ]
+                    });
                 }, (loop * 1000));
             }
         }
@@ -1011,14 +1046,14 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
             $scope.meanGrade = marksMeanValue;
 
             var widthNum = 70;
-            var subMarks = 100 - marksMeanValue;
+            var subMarks = parseInt($scope.reviews[0].peerReviewId.totalMarks) - marksMeanValue;
             var chart = c3.generate({
                 bindto: '#totalMarksMeanPieChart',
                 data: {
                     columns: [
                         // ["Marks", marksMeanValue],
                         // ["subMarks", subMarks]
-                        ["subMarks", 100],
+                        ["subMarks", parseInt($scope.reviews[0].peerReviewId.totalMarks)],
                         ["Marks", 0],
                     ],
                     type: 'donut',
@@ -1033,7 +1068,7 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
                 },
                 donut: {
                     label: {},
-                    title: "Mean: " + marksMeanValue.toFixed(0),
+                    title: "Mean: " + marksMeanValue.toFixed(2),
                     width: widthNum
                 }
             });
@@ -1049,6 +1084,36 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
 
 
         }
+    }
+
+    function median(values) {
+        values.sort(function (a, b) {
+            return a - b;
+        });
+
+        if (values.length === 0) return 0
+
+        var half = Math.floor(values.length / 2);
+
+        if (values.length % 2)
+            return values[half];
+        else
+            return (values[half - 1] + values[half]) / 2.0;
+    }
+
+    function getMedianGrade(data) {
+        var totalReviews = data.length;
+        if (totalReviews > 0)
+            var revObj = {};
+        for (var i = 0; i < totalReviews; i++) {
+            revObj[data[i].assignedTo.displayName] = data[i].marksObtained;
+        }
+        var reviewArray = Object.entries(revObj);
+        var gdArr = [];
+        for (var k = 0; k < reviewArray.length; k++) {
+            gdArr[k] = reviewArray[k][1]
+        }
+        return median(gdArr);
     }
 
 
@@ -1164,7 +1229,7 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
         populateRubrics(review)
         populateDisplayDocumentList(review)
         var test = populateDisplayDocumentList(review);
-        $scope.peerReview = review
+        $scope.peerReview = review;
 
         if (review.isSecondLoop && review.oldReviewId) {
             reviews.every(function (r) {
@@ -1368,12 +1433,22 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
         var calibrationScores = scores.data.calibrationScores;
         $scope.calibrationAccuracy = {};
         $scope.calibrationData = [];
+        var calibrationArray = [];
+        var calibrationAccuracyObj = {};
         calibrationScores.forEach(score => {
             if ($scope.solution.createdBy != score.reviewCalibrationId.reviewedBy._id) {
-                $scope.calibrationAccuracy[score.reviewCalibrationId.reviewedBy._id] = score.accuracy.toFixed(2) * 100
-                $scope.calibrationData.push({ id: score.reviewCalibrationId.reviewedBy._id, displayName: score.reviewCalibrationId.reviewedBy.displayName, match: score.match.toFixed(2), accuracy: score.accuracy * 100 });
+                calibrationAccuracyObj[score.reviewCalibrationId.reviewedBy._id] = score.accuracy.toFixed(2) * 100
+                calibrationArray.push({ id: score.reviewCalibrationId.reviewedBy._id, displayName: score.reviewCalibrationId.reviewedBy.displayName, match: score.match.toFixed(2), accuracy: score.accuracy * 100 });
             }
         });
+
+        $scope.reviews.forEach((review) => {
+            var elem = calibrationArray.find((d) => {
+                return review.assignedTo._id === d.id;
+            })
+            $scope.calibrationAccuracy[review.assignedTo._id] = calibrationAccuracyObj[review.assignedTo._id];
+            $scope.calibrationData.push(elem)
+        })
         DrawBarChartCalibrationMatch();
         DrawBarChartCalibrationAccuracy();
     }
@@ -1390,7 +1465,7 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
 
     function getAccuracy(adminReview, studentReview) {
         var marksGivenByTeacher = adminReview.marksObtained;
-        var maxInaccuracy = adminReview.peerReviewId.totalMarks;
+        var maxInaccuracy = $scope.reviews[0].peerReviewId.totalMarks;
         var difference = marksGivenByTeacher - studentReview.marksObtained;
         var inaccuracy = Math.abs(difference);
         inaccuracy = Math.abs(difference);
@@ -1462,10 +1537,12 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
         var accuracyObj = {};
         $scope.reviews.forEach(review => {
             accuracyObj[review.assignedTo._id] = '';
-            url = '/api/peerassessment/' + $scope.course._id + '/peer/' + review.assignedTo._id + '/getAggregatedAccuracy';
+            url = '/api/peerassessment/' + $scope.course._id + '/peer/' + review.assignedTo._id + '/date/'+ review.peerReviewId.dateAdded +'/getAggregatedAccuracy';
             $http.get(url).then(function (response) {
-                if (response.data && response.data.accuracy) {
+                if (response.data && response.data.accuracy.overallAccuracy) {
                     accuracyObj[response.data.accuracy._id] = (response.data.accuracy.overallAccuracy * 100).toFixed(2);
+                } else {
+                    accuracyObj[response.data.accuracy._id] = -1;
                 }
             }, function (err) {
                 // Check for proper error message later
@@ -1480,10 +1557,12 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
         var efficiencyArray = {};
         $scope.reviews.forEach(review => {
             efficiencyArray[review.assignedTo._id] = '';
-            url = '/api/peerassessment/' + $scope.course._id + '/peerReview/' + review.peerReviewId._id + '/peer/' + review.assignedTo._id + '/getAggregatedEfficiency';
+            url = '/api/peerassessment/' + $scope.course._id + '/peerReview/' + review.peerReviewId._id + '/peer/' + review.assignedTo._id + '/date/' + review.dateAdded + '/getAggregatedEfficiency';
             $http.get(url).then(function (response) {
                 if (response.data && response.data.efficiency) {
                     efficiencyArray[review.assignedTo._id] = (response.data.efficiency * 100 / 5).toFixed(2);
+                } else {
+                    efficiencyArray[review.assignedTo._id] = -1;
                 }
             }, function (err) {
                 // Check for proper error message later
@@ -1504,7 +1583,6 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
             reliabilityObj[r.assignedTo._id] = ((1 - math.erf(eq)) * 100).toFixed(2)
         });
         $scope.reliabilityData = reliabilityObj;
-        console.log("**********************", $scope.reliabilityData);
     }
 
     var getStudentGrade = function () {
@@ -1514,7 +1592,7 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
         var gradeArray = {};
         // var deferred;
         $scope.reviews.forEach(review => {
-            url = '/api/peerassessment/' + $scope.course._id + '/peerReview/' + review.peerReviewId._id + '/peer/' + review.assignedTo._id + '/getStudentGrade';
+            url = '/api/peerassessment/' + $scope.course._id + '/peerReview/' + review.peerReviewId._id + '/peer/' + review.assignedTo._id + '/date/'+review.peerReviewId.dateAdded+'/getStudentGrade';
             $http.get(url).then(function (response) {
 
                 // deferred = $q.defer();
@@ -1554,9 +1632,9 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
                 sortedData.push([str, calObj[str]]);
             }
 
-            sortedData.sort(function (a, b) {
-                return a[1] - b[1];
-            });
+            // sortedData.sort(function (a, b) {
+            //     return a[1] - b[1];
+            // });
 
             var barChart = c3.generate({
                 bindto: '#calibrationMatchBarChart',
@@ -1618,9 +1696,9 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
                 sortedData.push([str, calObj[str]]);
             }
 
-            sortedData.sort(function (a, b) {
-                return a[1] - b[1];
-            });
+            // sortedData.sort(function (a, b) {
+            //     return a[1] - b[1];
+            // });
 
             var barChart = c3.generate({
                 bindto: '#calibrationAccuracyBarChart',
@@ -1668,44 +1746,164 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
         }
     }
 
+    function DrawBarChartCredibility() {
+        var credObj = {};
+
+        $scope.reviews.forEach(review => {
+            credObj[review.assignedTo.displayName] = $scope.credibilityData[review.assignedTo._id];
+        });
+
+        var sortedData = [];
+        for (var str in credObj) {
+            sortedData.push([str, credObj[str]]);
+        }
+
+        // sortedData.sort(function (a, b) {
+        //     return a[1] - b[1];
+        // });
+
+        var barChart = c3.generate({
+            bindto: '#credibilityBarChart',
+            data: {
+                columns: [
+
+                ],
+                type: 'bar',
+                labels: true
+            },
+            color: {
+                pattern: ['#1f77b4', '#2ca02c', '#ff7f0e', '#9467bd', '#aec7e8', '#98df8a', '#d62728', '#ff9896', '#c5b0d5', '#8c564b', '#c49c94', '#e377c2', '#f7b6d2', '#7f7f7f', '#c7c7c7', '#bcbd22', '#dbdb8d', '#17becf', '#9edae5']
+            },
+            bar: {
+                width: {
+                    ratio: 0.6 // this makes bar width 50% of length between ticks
+                }
+            },
+            axis: {
+
+                x: {
+                    type: 'categorized',
+                    tick: {
+                        format: function (x) {
+                            return '';
+                        }
+                    }
+                }
+            }
+        });
+
+        for (var j = 0; j < sortedData.length; j++) {
+            callSetTimeOut(sortedData, j); //
+        }
+
+        function callSetTimeOut(sortedData, loop) {
+            setTimeout(function () {
+                barChart.load({
+                    columns: [
+                        [sortedData[loop][0], sortedData[loop][1]]
+                    ]
+                });
+            }, (loop * 1000));
+        }
+
+    }
 
     var getCredibility = function () {
         $scope.credibilityData = {};
         var count;
-
+        var fields = {};
         $scope.reviews.forEach(review => {
+            fields = {
+                calbrationScore: 0,
+                validity: 0,
+                efficienncy: 0,
+                reliability: 0,
+                grade: 0,
+                credibility: 0
+            }
             $scope.credibilityData[review.assignedTo._id] = 0;
             count = 0;
-            if ($scope.gradeData && $scope.gradeData.hasOwnProperty(review.assignedTo._id)) {
+            if ($scope.gradeData && $scope.gradeData.hasOwnProperty(review.assignedTo._id) && parseFloat($scope.gradeData[review.assignedTo._id]) >= 0) {
+                console.log("parseFloat($scope.gradeData[review.assignedTo._id]",parseFloat($scope.gradeData[review.assignedTo._id]));
                 $scope.credibilityData[review.assignedTo._id] += parseFloat($scope.gradeData[review.assignedTo._id]);
+                fields.grade = parseFloat($scope.gradeData[review.assignedTo._id])
                 count++;
             }
-            if ($scope.accuracyData && $scope.accuracyData[review.assignedTo._id]) {
+            if ($scope.accuracyData && $scope.accuracyData[review.assignedTo._id] && parseFloat($scope.accuracyData[review.assignedTo._id]) >= 0) {
+                console.log("parseFloat($scope.accuracyData[review.assignedTo._id])",parseFloat($scope.accuracyData[review.assignedTo._id]));
                 $scope.credibilityData[review.assignedTo._id] += parseFloat($scope.accuracyData[review.assignedTo._id]);
+                fields.validity = parseFloat($scope.accuracyData[review.assignedTo._id]);
                 count++;
             }
-            if ($scope.efficiencyData && $scope.efficiencyData[review.assignedTo._id]) {
+            if ($scope.efficiencyData && $scope.efficiencyData[review.assignedTo._id] && parseFloat($scope.efficiencyData[review.assignedTo._id]) >= 0) {
+                console.log("parseFloat($scope.efficiencyData[review.assignedTo._id])",parseFloat($scope.efficiencyData[review.assignedTo._id]));
                 $scope.credibilityData[review.assignedTo._id] += parseFloat($scope.efficiencyData[review.assignedTo._id]);
+                fields.efficiency = parseFloat($scope.efficiencyData[review.assignedTo._id]);
                 count++;
             }
-            if ($scope.calibrationAccuracy && $scope.calibrationAccuracy[review.assignedTo._id]) {
+            if ($scope.calibrationAccuracy && $scope.calibrationAccuracy[review.assignedTo._id] && parseFloat($scope.calibrationAccuracy[review.assignedTo._id]) >= 0) {
+                console.log("beofre: ", $scope.credibilityData[review.assignedTo._id]);
+                console.log("adding calibration accuracy");
                 $scope.credibilityData[review.assignedTo._id] += parseFloat($scope.calibrationAccuracy[review.assignedTo._id]);
+                fields.calibrationScore = parseFloat($scope.calibrationAccuracy[review.assignedTo._id]);
+                console.log("after: ", $scope.credibilityData[review.assignedTo._id]);
                 count++;
             }
-            if ($scope.reliabilityData && $scope.reliabilityData[review.assignedTo._id]) {
+            if ($scope.reliabilityData && $scope.reliabilityData[review.assignedTo._id] && parseFloat($scope.reliabilityData[review.assignedTo._id]) >= 0) {
                 $scope.credibilityData[review.assignedTo._id] += parseFloat($scope.reliabilityData[review.assignedTo._id]);
+                fields.reliability = parseFloat($scope.reliabilityData[review.assignedTo._id]);
                 count++;
             }
 
 
             //making average
             $scope.credibilityData[review.assignedTo._id] = parseFloat($scope.credibilityData[review.assignedTo._id]) / count;
+            // fields.credibility = parseFloat($scope.credibilityData[review.assignedTo._id]);
+            // var url = '/api/peerassessment/' + $scope.course._id + '/peerreviews/' + review.peerReviewId._id + '/solution/' + $scope.solution._id + '/peer/' + review.assignedTo._id + '/addCredibilityMetric'
+
+            // var uploadParams = {
+            //     method: 'POST',
+            //     url: url,
+            //     fields: fields
+            // };
+
+            // $scope.upload = Upload.upload(
+            //     uploadParams
+            // )
+            //     .progress(function (evt) {
+            //         if (!evt.config.file)
+            //             return;
+            //         $scope.progress = parseInt(100.0 * evt.loaded / evt.total);
+            //     })
+            //     .success(function (data) {
+            //         getGrades();
+            //         DrawBarChartCredibility()
+            //         $scope.progress = 0;
+            //         if (data.result) {
+            //             toastr.success('Successfully Saved');
+            //         } else {
+            //             toastr.error(data.errors[0] || 'Failed');
+            //         }
+            //         $scope.isLoading = false;
+            //         // window.history.back();
+
+            //     })
+            //     .error(function (data) {
+            //         getGrades();
+            //         DrawBarChartCredibility()
+            //         toastr.error('Internal Server Error');
+            //         $scope.errors = data.errors;
+            //         $scope.progress = 0;
+            //         $scope.isLoading = false;
+
+            //     });
+
         });
         setTimeout(function () {
             $scope.$apply();
-        }, 300)  
+        }, 300)
         getGrades();
-
+        DrawBarChartCredibility()
     }
 
     var getGrades = function () {
@@ -1717,28 +1915,89 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
 
         $scope.reviews.forEach((review) => {
             var value = review.marksObtained * parseFloat($scope.credibilityData[review.assignedTo._id]);
-            
-        console.log("marks obtained: "+review.marksObtained, " * weight: ", parseFloat($scope.credibilityData[review.assignedTo._id]));
+
+            console.log("marks obtained: " + review.marksObtained, " * weight: ", parseFloat($scope.credibilityData[review.assignedTo._id]));
             final += value;
-            console.log("__________________", final);
         })
-        
-        $scope.finalGrade = final/totalWeight;
-        console.log("__________________", $scope.finalGrade);
+
+        $scope.finalGrade = final / totalWeight;
         drawFinalGradeChart();
+        drawFinalGradePieChart();
     }
 
     function drawFinalGradeChart() {
+        var gradeObj = {};
+        gradeObj['Mean'] = $scope.meanGrade.toFixed(2);
+        gradeObj['Median'] = $scope.medianGrade;
+        gradeObj['Predicted Grade'] = $scope.finalGrade.toFixed(2);
+
+
+        var sortedData = [];
+        for (var str in gradeObj) {
+            sortedData.push([str, gradeObj[str]]);
+        }
+
+        // sortedData.sort(function (a, b) {
+        //     return a[1] - b[1];
+        // });
+
+        var barChart = c3.generate({
+            bindto: '#gradeEstimationBarChart',
+            data: {
+                columns: [
+
+                ],
+                type: 'bar',
+                labels: true
+            },
+            color: {
+                pattern: ['#1f77b4', '#2ca02c', '#ff7f0e', '#9467bd', '#aec7e8', '#98df8a', '#d62728', '#ff9896', '#c5b0d5', '#8c564b', '#c49c94', '#e377c2', '#f7b6d2', '#7f7f7f', '#c7c7c7', '#bcbd22', '#dbdb8d', '#17becf', '#9edae5']
+            },
+            bar: {
+                width: {
+                    ratio: 0.6 // this makes bar width 50% of length between ticks
+                }
+            },
+            axis: {
+
+                x: {
+                    type: 'categorized',
+                    tick: {
+                        format: function (x) {
+                            return '';
+                        }
+                    }
+                }
+            }
+        });
+
+        for (var j = 0; j < sortedData.length; j++) {
+            callSetTimeOut(sortedData, j); //
+        }
+
+        function callSetTimeOut(sortedData, loop) {
+            setTimeout(function () {
+                barChart.load({
+                    columns: [
+                        [sortedData[loop][0], sortedData[loop][1]]
+                    ]
+                });
+            }, (loop * 1000));
+        }
+
+    }
+
+    function drawFinalGradePieChart() {
         var marksMeanValue = $scope.finalGrade;
         var widthNum = 70;
-        var subMarks = 100 - marksMeanValue;
+        var subMarks = parseInt($scope.reviews[0].peerReviewId.totalMarks) - marksMeanValue;
         var chart = c3.generate({
             bindto: '#predictedGradeBarChart',
             data: {
                 columns: [
                     // ["Marks", marksMeanValue],
                     // ["subMarks", subMarks]
-                    ["subMarks", 100],
+                    ["subMarks", parseInt($scope.reviews[0].peerReviewId.totalMarks)],
                     ["Marks", 0],
                 ],
                 type: 'donut',
@@ -1753,7 +2012,7 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
             },
             donut: {
                 label: {},
-                title: "Grade: " + marksMeanValue.toFixed(0),
+                title: "Grade: " + marksMeanValue.toFixed(2),
                 width: widthNum
             }
         });

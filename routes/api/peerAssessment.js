@@ -1185,7 +1185,6 @@ router.get('/peerassessment/:courseId/peerreviews', helper.l2pAuth, helper.ensur
         }
     )
 }))
-
 /**
  * DELETE
  * delete a peer review
@@ -1831,18 +1830,17 @@ router.put('/peerassessment/:courseId/peerreviews/:pRId/solution/:sId/peer/:pId/
 * GET
 * calculate the overall Accuracy of a peer
 */
-router.get('/peerassessment/:courseId/peer/:pId/getAggregatedAccuracy', helper.l2pAuth, helper.ensureAuthenticated, async(function (req, res) {
+router.get('/peerassessment/:courseId/peer/:pId/date/:date/getAggregatedAccuracy', helper.l2pAuth, helper.ensureAuthenticated, async(function (req, res) {
     if (!req.user) {
         return res.status(401).send('Unauthorized');
     }
-
     req.body.peerId = mongoose.Types.ObjectId(req.params.pId);
+    req.body.date = req.params.date;
     req.body.courseId = mongoose.Types.ObjectId(req.params.courseId);
     var am = new credibilityMetric();
-    am.getAggregatedAccuracy(
+    am.getAccuracies(
         function (err) {
             console.log("error fething the aggregated result", err);
-
             helper.resReturn(err, res);
         },
         req.body,
@@ -1860,11 +1858,11 @@ router.get('/peerassessment/:courseId/peer/:pId/getAggregatedAccuracy', helper.l
 * GET
 * calculate the overall efficiency of a peer
 */
-router.get('/peerassessment/:courseId/peerReview/:pRId/peer/:pId/getAggregatedEfficiency', helper.l2pAuth, helper.ensureAuthenticated, async(function (req, res) {
+router.get('/peerassessment/:courseId/peerReview/:pRId/peer/:pId/date/:date/getAggregatedEfficiency', helper.l2pAuth, helper.ensureAuthenticated, async(function (req, res) {
     if (!req.user) {
         return res.status(401).send('Unauthorized');
     }
-
+    req.body.date = req.params.date;
     req.body.peerId = mongoose.Types.ObjectId(req.params.pId);
     req.body.courseId = mongoose.Types.ObjectId(req.params.courseId);
     req.body.peerReviewId = mongoose.Types.ObjectId(req.params.pRId);
@@ -1890,11 +1888,11 @@ router.get('/peerassessment/:courseId/peerReview/:pRId/peer/:pId/getAggregatedEf
 * GET
 * calculate the overall grade of a peer
 */
-router.get('/peerassessment/:courseId/peerReview/:pRId/peer/:pId/getStudentGrade', helper.l2pAuth, helper.ensureAuthenticated, async(function (req, res) {
+router.get('/peerassessment/:courseId/peerReview/:pRId/peer/:pId/date/:date/getStudentGrade', helper.l2pAuth, helper.ensureAuthenticated, async(function (req, res) {
     if (!req.user) {
         return res.status(401).send('Unauthorized');
     }
-
+    req.body.date = req.params.date;
     req.body.peerId = mongoose.Types.ObjectId(req.params.pId);
     req.body.courseId = mongoose.Types.ObjectId(req.params.courseId);
     req.body.peerReviewId = mongoose.Types.ObjectId(req.params.pRId);
@@ -1943,4 +1941,107 @@ router.get('/decisionTree', helper.l2pAuth, helper.ensureAuthenticated, async(fu
 
 }))
 
+/**
+ * POST
+ * add credibility metric
+ */
+router.post('/peerassessment/:courseId/peerreviews/:pRId/solution/:sId/peer/:pId/addCredibilityMetric', helper.l2pAuth, helper.ensureAuthenticated,
+    multipartyMiddleware,
+    function (req, res) {
+        if (!req.user) {
+            return res.status(401).send('Unauthorized');
+        }
+        req.body.peerId = mongoose.Types.ObjectId(req.params.pId);
+        req.body.courseId = mongoose.Types.ObjectId(req.params.courseId);
+        req.body.peerReviewId = mongoose.Types.ObjectId(req.params.pRId);
+        req.body.solutionId = mongoose.Types.ObjectId(req.params.sId);
+        var am = new credibilityMetric();
+        am.getCredibilityMetric(
+            function (err) {
+                console.log("check 'If Credibility Metric already Exists' countered some error", err);
+                helper.resReturn(err, res);
+            },
+            req.body,
+            function (data) {
+                if (!data) {
+                    am.addCredibilityMetric(
+                        function (err) {
+                            console.log("Error in adding accuracy:", err);
+                            res.status(200).json({
+                                result: false,
+                                errors: [err.message]
+                            });
+                        },
+                        // parameters
+                        req.body,
+                        function () {
+                            console.log("Credibility Metric added successfully!");
+                            res.status(200).json({
+                                result: true
+                            });
+                        }
+                    )
+                }
+            }
+        )
+    });
+
+
+/**
+* GET
+* get the credibility metric of a solution
+*/
+router.get('/peerassessment/:courseId/peer/:pId/solution/:solutionId/getCredibilityMetric', helper.l2pAuth, helper.ensureAuthenticated, async(function (req, res) {
+    if (!req.user) {
+        return res.status(401).send('Unauthorized');
+    }
+
+    req.body.peerId = mongoose.Types.ObjectId(req.params.pId);
+    req.body.courseId = mongoose.Types.ObjectId(req.params.courseId);
+    req.body.solutionId = mongoose.Types.ObjectId(req.params.solutionId);
+    var am = new credibilityMetric();
+    am.getCredibilityMetric(
+        function (err) {
+            console.log("error fething the aggregated result", err);
+
+            helper.resReturn(err, res);
+        },
+        req.body,
+        function (credibilityMetrics) {
+            res.status(200).json({
+                result: true,
+                credibilityMetrics: credibilityMetrics
+            });
+        }
+    )
+
+}))
+/**
+* GET
+* get the credibility metrics of a peer in a course (latest first)
+*/
+router.get('/peerassessment/:courseId/peer/:pId/getCredibilityMetrics', helper.l2pAuth, helper.ensureAuthenticated, async(function (req, res) {
+    if (!req.user) {
+        return res.status(401).send('Unauthorized');
+    }
+
+    req.body.peerId = mongoose.Types.ObjectId(req.params.pId);
+    req.body.courseId = mongoose.Types.ObjectId(req.params.courseId);
+    var am = new credibilityMetric();
+    am.getCredibilityMetrics(
+        function (err) {
+            console.log("error fething the aggregated result", err);
+
+            helper.resReturn(err, res);
+        },
+        req.body,
+        function (credibilityMetrics) {
+            res.status(200).json({
+                result: true,
+                credibilityMetrics: credibilityMetrics
+            });
+        }
+    )
+
+}))
 module.exports = router;

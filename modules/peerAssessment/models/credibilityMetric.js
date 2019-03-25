@@ -2,8 +2,13 @@ var mongoose = require('mongoose');
 var appRoot = require('app-root-path');
 var userHelper = require(appRoot + '/modules/accounts/user.helper.js');
 
-var inaccuracySchema = new mongoose.Schema({
-    inaccuracy: { type: Number },
+var credibilityMetricScchema = new mongoose.Schema({
+    calibrationScore: { type: Number },
+    validity: { type: Number },
+    efficiency: { type: Number },
+    reliability: { type: Number },
+    grade: { type: Number },
+    credibility: { type: Number },
     solutionId: { type: mongoose.Schema.Types.ObjectId, ref: 'solutions', required: true },
     peerReviewId: { type: mongoose.Schema.Types.ObjectId, ref: 'peerreviews', required: true },
     courseId: { type: mongoose.Schema.Types.ObjectId, ref: 'courses', required: true },
@@ -12,7 +17,7 @@ var inaccuracySchema = new mongoose.Schema({
     dateUpdated: { type: Date }
 },{ usePushEach: true });
 
-inaccuracySchema.pre('save', function(next){
+credibilityMetricScchema.pre('save', function(next){
     var now = new Date();
 
     if ( !this.dateAdded ) {
@@ -24,6 +29,6 @@ inaccuracySchema.pre('save', function(next){
     next();
 });
 
-var Inaccuracy = mongoose.model('inaccuracy', inaccuracySchema);
+var CredibilityMetric = mongoose.model('credibilityMetric', credibilityMetricScchema);
 
-module.exports = Inaccuracy;
+module.exports = CredibilityMetric;

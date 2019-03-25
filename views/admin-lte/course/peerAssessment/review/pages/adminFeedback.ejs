@@ -199,11 +199,10 @@
                                                         obtained marks</label>
                                                     <div id="marksObtainedBarChart"></div>
                                                 </div>
-
                                                 <div class="col-sm-6">
                                                     <label style="text-align: center; font-size: 16px;"
                                                         class="col-sm-12">{{solution.studentName}}
-                                                        obtained marks mean</label>
+                                                        Mean Grade</label>
                                                     <div id="totalMarksMeanPieChart"></div>
                                                 </div>
                                             </div>
@@ -301,8 +300,7 @@
                                         <div class="col-sm-12">
                                             <div class="col-sm-6">
                                                 <label style="text-align: center; font-size: 16px;"
-                                                    class="col-sm-12">{{solution.studentName}}
-                                                    and Teacher Calibration Rubrics Matches</label>
+                                                    class="col-sm-12">Students and Teacher Calibration Rubrics Matches</label>
                                                 <div id="calibrationMatchBarChart"></div>
                                             </div>
                                             <div class="col-sm-6">
@@ -313,6 +311,8 @@
                                             </div>
                                         </div>
                                     </fieldset>
+                                    <br>
+                                    <br>
                                 </div>
                             </div>
                             <div class="panel panel-default" style="margin-top: 50px">
@@ -322,8 +322,7 @@
                                         <div ng-show="!reviews || reviews.length == 0">
                                             <h5>No reviews available currently</h5>
                                         </div>
-                                        <label style="text-align: center; font-size: 16px;"
-                                            class="col-sm-12"></label>
+                                        <label style="text-align: center; font-size: 16px;" class="col-sm-12"></label>
 
                                         <table class="table table-hover table-condensed" ng-show="reviews.length > 0">
 
@@ -338,8 +337,8 @@
                                             <thead>
                                                 <tr>
                                                     <th>Student Name</th>
-                                                    <th ng-if="isCalibration">Calibration Score </th>
-                                                    <th>Consistency</th>
+                                                    <th>Calibration Score </th>
+                                                    <th>Validity</th>
                                                     <th>Efficiency</th>
                                                     <th>Reliability</th>
                                                     <th>Grade</th>
@@ -348,23 +347,29 @@
                                             </thead>
                                             <tbody>
                                                 <tr ng-repeat="review in reviews">
-                                                    <td>{{review.assignedTo.displayName}}</td>
-                                                    <td ng-if="isCalibration">
-                                                        {{calibrationAccuracy[review.assignedTo._id]}}
-                                                        <span>%</span></td>
-                                                    <td>{{accuracyData[review.assignedTo._id]}} <span
-                                                            ng-if="accuracyData[review.assignedTo._id] != ''">%</span>
+                                                    <td><b>{{review.assignedTo.displayName}}</b></td>
+                                                    <td ng-if="isCalibration"><span
+                                                            ng-if="calibrationAccuracy[review.assignedTo._id] >= 0">
+                                                            {{calibrationAccuracy[review.assignedTo._id]}} %</span>
                                                     </td>
-                                                    <td>{{efficiencyData[review.assignedTo._id]}} <span
-                                                            ng-if="efficiencyData[review.assignedTo._id] != ''">%</span>
+                                                    <td ng-if="!isCalibration"> No Calibraiton
                                                     </td>
-                                                    <td>{{reliabilityData[review.assignedTo._id]}} <span
-                                                            ng-if="reliabilityData[review.assignedTo._id] != ''">%</span>
+                                                    <td> <span
+                                                            ng-if="accuracyData[review.assignedTo._id] >= 0 && accuracyData[review.assignedTo._id]!= null && accuracyData[review.assignedTo._id]!= ''">{{accuracyData[review.assignedTo._id]}}
+                                                            %</span>
                                                     </td>
-                                                    <td>{{gradeData[review.assignedTo._id]}} <span
-                                                            ng-if="gradeData[review.assignedTo._id] != ''">%</span></td>
-                                                    <td><b>{{credibilityData[review.assignedTo._id]}} </b><span
-                                                            ng-if="credibilityData[review.assignedTo._id] != ''">%</span>
+                                                    <td> <span
+                                                            ng-if="efficiencyData[review.assignedTo._id] >= 0">{{efficiencyData[review.assignedTo._id]}}
+                                                            %</span>
+                                                    </td>
+                                                    <td><span
+                                                            ng-if="reliabilityData[review.assignedTo._id] >= 0">{{reliabilityData[review.assignedTo._id]}}
+                                                            %</span>
+                                                    </td>
+                                                    <td> <span ng-if="gradeData[review.assignedTo._id] >= 0">
+                                                            {{gradeData[review.assignedTo._id]}} %</span></td>
+                                                    <td><b><span ng-if="credibilityData[review.assignedTo._id] >= 0">{{credibilityData[review.assignedTo._id].toFixed(2)}}
+                                                                %</span></b>
                                                     </td>
                                                 </tr>
                                             </tbody>
@@ -373,28 +378,53 @@
                                     <ul>
                                         <li><b>Calibration Score: </b> Similarity between the student and teacher grade,
                                             in the calibraiton solution of this assignment.</li>
-                                        <li><b>Consistency: </b> Overall closeness between the student and teacher
+                                        <li><b>Validity: </b> Similarity between the student and teacher
                                             grades, in the previous assignments.</li>
-                                        <li><b>Efficiency: </b> Measure of the useability of the feedback provided by
+                                        <li><b>Efficiency: </b> Usability of the feedback provided by
                                             the grader.</li>
-                                        <li><b>Reliability: </b> Measurement of the closeness of the grader from the
-                                            consensus of other peers' grades.</li>
-                                        <li><b>Grade: </b> Grader performance in his own previous assignments.</li>
+                                        <li><b>Reliability: </b> Closeness of the grader from the
+                                            consensus of peers' grades.</li>
+                                        <li><b>Grade: </b> Overall grades in previous assignments.</li>
 
                                     </ul>
+                                    <fieldset>
+                                        <div class="col-sm-12">
+                                            <div class="col-sm-6" style="text-align:center">
+                                                <label style="text-align: center; font-size: 16px;"
+                                                    class="col-sm-12">Credibility of Peers</label>
+                                                <div id="credibilityBarChart"></div>
+                                            </div>
+                                            <div class="col-sm-6">
+                                                <label style="text-align: center; font-size: 16px;"
+                                                    class="col-sm-12">Grades given by peers</label>
+                                                <div id="marksObtainedBarChart2"></div>
+                                            </div>
+                                        </div>
+                                    </fieldset>
+                                    <br>
+                                    <br>
                                 </div>
                             </div>
 
                             <div class="panel panel-default" style="margin-top: 50px">
-                                <div class="panel-heading">Proposed Grade</div>
+                                <div class="panel-heading">Grade Estimation</div>
                                 <div class="panel-body">
                                     <fieldset>
                                         <div class="col-sm-12">
-                                            <label style="text-align: center; font-size: 16px;" class="col-sm-12">
-                                            </label>
-                                            <div id="predictedGradeBarChart"></div>
+                                            <div class="col-sm-6" style="text-align:center">
+                                                <label style="text-align: center; font-size: 16px;"
+                                                    class="col-sm-12">Mean, Median and Predicted Grade</label>
+                                                <div id="gradeEstimationBarChart"></div>
+                                            </div>
+                                            <div class="col-sm-6">
+                                                <label style="text-align: center; font-size: 16px;"
+                                                    class="col-sm-12">Predicted Grade</label>
+                                                <div id="predictedGradeBarChart"></div>
+                                            </div>
                                         </div>
                                     </fieldset>
+                                    <br>
+                                    <br>
                                 </div>
                             </div>
                             <div class="panel panel-default">

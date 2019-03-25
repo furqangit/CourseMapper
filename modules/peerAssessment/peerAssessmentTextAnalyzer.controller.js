@@ -58,8 +58,17 @@ function compare(adminReview, userReview) {
 
     //Sørensen–Dice coefficient
     var diceCoefficientSimilarity = DiceCoefficientDistance(adminReview, userReview) * 100;
-
-    var mean = (cosineSimilarity + diceCoefficientSimilarity + levenshteinSimilarity) / 3;
+    let count = 0;
+    if (cosineSimilarity > 0) {
+        count++;
+    }
+    if (diceCoefficientSimilarity > 0) {
+        count++;
+    }
+    if (levenshteinSimilarity > 0) {
+        count++;
+    }
+    var mean = (cosineSimilarity + diceCoefficientSimilarity + levenshteinSimilarity) / count;
     return mean;
 }
 
@@ -147,30 +156,30 @@ peerAssessmentTextAnalyzer.prototype.getAnalyzedRewiewReport = function (error, 
             if (reviewsCount == 2) //no possible combinations for two users 
             {
                 for (var i = 0; i < totalReviews; i++) {
-                    var rubricReview1 = reviews[0].rubricNewReview;
-                    var rubricReview2 = reviews[1].rubricNewReview;
+                        var rubricReview1 = reviews[0].rubricNewReview;
+                        var rubricReview2 = reviews[1].rubricNewReview;
 
-                    var sortedKeys = Object.keys(rubricReview1).sort(); //sorting the object keys
-                    var str1 = rubricReview1[sortedKeys[i]]; //fetch 
+                        var sortedKeys = Object.keys(rubricReview1).sort(); //sorting the object keys
+                        var str1 = rubricReview1[sortedKeys[i]]; //fetch 
 
-                    var sortedKeys2 = Object.keys(rubricReview2).sort(); //sorting the object keys
-                    var str2 = rubricReview2[sortedKeys2[i]];
+                        var sortedKeys2 = Object.keys(rubricReview2).sort(); //sorting the object keys
+                        var str2 = rubricReview2[sortedKeys2[i]];
 
-                    var Levenshtein_Dis = LevenshteinDistance(str1, str2);
-                    var textLenght = (str1.length + str2.length);
+                        var Levenshtein_Dis = LevenshteinDistance(str1, str2);
+                        var textLenght = (str1.length + str2.length);
 
-                    //Levenshtein distance
-                    var levenshteinSimilarity = 100 - ((Levenshtein_Dis / textLenght) * 100); //conversion into % from distance
+                        //Levenshtein distance
+                        var levenshteinSimilarity = 100 - ((Levenshtein_Dis / textLenght) * 100); //conversion into % from distance
 
-                    //Cosine similarity
-                    var cosineSimilarity = CosineDistance.compareTwoStrings(str1, str2) * 100;
+                        //Cosine similarity
+                        var cosineSimilarity = CosineDistance.compareTwoStrings(str1, str2) * 100;
 
-                    //Sørensen–Dice coefficient
-                    var diceCoefficientSimilarity = DiceCoefficientDistance(str1, str2) * 100;
+                        //Sørensen–Dice coefficient
+                        var diceCoefficientSimilarity = DiceCoefficientDistance(str1, str2) * 100;
 
-                    var mean = (cosineSimilarity + diceCoefficientSimilarity + levenshteinSimilarity) / 3;
+                        var mean = (cosineSimilarity + diceCoefficientSimilarity + levenshteinSimilarity) / 3;
 
-                    rewiewObject["R" + (1) + "|R" + (2) + "-" + sortedKeys2[i] + ":" + mean.toFixed(2) + "*R" + (1) + "=" + reviews[0].assignedTo.displayName + ":R" + (2) + "=" + reviews[1].assignedTo.displayName] = mean.toFixed(2);
+                        rewiewObject["R" + (1) + "|R" + (2) + "-" + sortedKeys2[i] + ":" + mean.toFixed(2) + "*R" + (1) + "=" + reviews[0].assignedTo.displayName + ":R" + (2) + "=" + reviews[1].assignedTo.displayName] = mean.toFixed(2);  
                 }
             }
             else {
@@ -257,38 +266,42 @@ function getAccuracy(adminReview, studentReview) {
 peerAssessmentTextAnalyzer.prototype.getCalibrationScore = function (error, adminReview, userReviews, success) {
     try {
         var scoreArray = [];
-        var sum = 0;
         var adminRubrics;
         var userRubrics;
         var score = {};
-        var numOfRubrics = 0
         var average;
         var accuracy;
         var inaccuracy;
         var inaccuracies = userReviews.map((review) => {
             return { review: review, value: Math.pow(review.marksObtained - adminReview.marksObtained, 2) };
         })
-        var maximumInaccuracy = inaccuracies.reduce((a,b)=>{
-            return (a.value> b.value)? a: b;
+
+        var maximumInaccuracy = inaccuracies.reduce((a, b) => {
+            return (a.value > b.value) ? a : b;
         })
         userReviews.forEach(review => {
             accuracy = 0;
-            adminRubrics = adminReview.rubricReview;
+            adminRubrics = adminReview.rubricReview ? adminReview.rubricReview : {};
             userRubrics = review.rubricReview;
+            var numOfRubrics = 0
+            var sum = 0;
+            if (Object.keys(adminRubrics).length > 0) {
+                Object.keys(adminRubrics).forEach(function (rubric) {
+                    numOfRubrics++;
+                    score[rubric] = compare(adminRubrics[rubric], userRubrics[rubric]);
+                });
 
-            Object.keys(adminRubrics).forEach(function (rubric) {
-                numOfRubrics++;
-                score[rubric] = compare(adminRubrics[rubric], userRubrics[rubric]);
-            });
+                Object.keys(score).forEach(function (value) {
+                    sum += score[value];
+                });
 
-            Object.keys(score).forEach(function (value) {
-                sum += score[value];
-            });
-
-            average = sum / numOfRubrics;
+                average = sum / numOfRubrics;
+            } else {
+                average = 0;
+            }
             // inaccuracy = inaccuracies.find((inac)=>{return inac.review._id === review._id});
             // accuracy = 1 - (inaccuracy.value / maximumInaccuracy.value);
-            accuracy = getAccuracy(adminReview,review);
+            accuracy = getAccuracy(adminReview, review);
             scoreArray.push({ review: review, match: average, accuracy: accuracy });
         });
         success(scoreArray);
