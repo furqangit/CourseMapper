@@ -15,12 +15,12 @@ var credibilityMetricScchema = new mongoose.Schema({
     peerId: { type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true },
     dateAdded: { type: Date },
     dateUpdated: { type: Date }
-},{ usePushEach: true });
+}, { usePushEach: true });
 
-credibilityMetricScchema.pre('save', function(next){
+credibilityMetricScchema.pre('save', function (next) {
     var now = new Date();
 
-    if ( !this.dateAdded ) {
+    if (!this.dateAdded) {
         this.dateAdded = now;
     }
 

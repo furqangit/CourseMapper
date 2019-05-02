@@ -48,8 +48,7 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
                     getStudentGrade();
                     setTimeout(function () {
                         getCredibility();
-                    }, 300);
-                    getDecisionTree();
+                    }, 500);
                 }
             }
         }, function (err) {
@@ -344,7 +343,7 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
                         }
                     }, function (err) {
                         // Check for proper error message later
-                        toastr.error('Internal Server Error. Please try again later.');
+                        //toastr.error('Internal Server Error. Please try again later.'); //remove when needed
                     })
 
                 });
@@ -638,7 +637,7 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
             }
         }, function (err) {
             // Check for proper error message later
-            toastr.error('Internal Server Error. Please try again later.');
+            //toastr.error('Internal Server Error. Please try again later.'); //remove when needed
         })
     }
 
@@ -1537,7 +1536,7 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
         var accuracyObj = {};
         $scope.reviews.forEach(review => {
             accuracyObj[review.assignedTo._id] = '';
-            url = '/api/peerassessment/' + $scope.course._id + '/peer/' + review.assignedTo._id + '/date/'+ review.peerReviewId.dateAdded +'/getAggregatedAccuracy';
+            url = '/api/peerassessment/' + $scope.course._id + '/peer/' + review.assignedTo._id + '/date/' + review.peerReviewId.dateAdded + '/getAggregatedAccuracy';
             $http.get(url).then(function (response) {
                 if (response.data && response.data.accuracy.overallAccuracy) {
                     accuracyObj[response.data.accuracy._id] = (response.data.accuracy.overallAccuracy * 100).toFixed(2);
@@ -1592,7 +1591,7 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
         var gradeArray = {};
         // var deferred;
         $scope.reviews.forEach(review => {
-            url = '/api/peerassessment/' + $scope.course._id + '/peerReview/' + review.peerReviewId._id + '/peer/' + review.assignedTo._id + '/date/'+review.peerReviewId.dateAdded+'/getStudentGrade';
+            url = '/api/peerassessment/' + $scope.course._id + '/peerReview/' + review.peerReviewId._id + '/peer/' + review.assignedTo._id + '/date/' + review.peerReviewId.dateAdded + '/getStudentGrade';
             $http.get(url).then(function (response) {
 
                 // deferred = $q.defer();
@@ -1812,6 +1811,8 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
         $scope.credibilityData = {};
         var count;
         var fields = {};
+        let promises = [];
+
         $scope.reviews.forEach(review => {
             fields = {
                 calbrationScore: 0,
@@ -1824,19 +1825,19 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
             $scope.credibilityData[review.assignedTo._id] = 0;
             count = 0;
             if ($scope.gradeData && $scope.gradeData.hasOwnProperty(review.assignedTo._id) && parseFloat($scope.gradeData[review.assignedTo._id]) >= 0) {
-                console.log("parseFloat($scope.gradeData[review.assignedTo._id]",parseFloat($scope.gradeData[review.assignedTo._id]));
+                console.log("parseFloat($scope.gradeData[review.assignedTo._id]", parseFloat($scope.gradeData[review.assignedTo._id]));
                 $scope.credibilityData[review.assignedTo._id] += parseFloat($scope.gradeData[review.assignedTo._id]);
                 fields.grade = parseFloat($scope.gradeData[review.assignedTo._id])
                 count++;
             }
             if ($scope.accuracyData && $scope.accuracyData[review.assignedTo._id] && parseFloat($scope.accuracyData[review.assignedTo._id]) >= 0) {
-                console.log("parseFloat($scope.accuracyData[review.assignedTo._id])",parseFloat($scope.accuracyData[review.assignedTo._id]));
+                console.log("parseFloat($scope.accuracyData[review.assignedTo._id])", parseFloat($scope.accuracyData[review.assignedTo._id]));
                 $scope.credibilityData[review.assignedTo._id] += parseFloat($scope.accuracyData[review.assignedTo._id]);
                 fields.validity = parseFloat($scope.accuracyData[review.assignedTo._id]);
                 count++;
             }
             if ($scope.efficiencyData && $scope.efficiencyData[review.assignedTo._id] && parseFloat($scope.efficiencyData[review.assignedTo._id]) >= 0) {
-                console.log("parseFloat($scope.efficiencyData[review.assignedTo._id])",parseFloat($scope.efficiencyData[review.assignedTo._id]));
+                console.log("parseFloat($scope.efficiencyData[review.assignedTo._id])", parseFloat($scope.efficiencyData[review.assignedTo._id]));
                 $scope.credibilityData[review.assignedTo._id] += parseFloat($scope.efficiencyData[review.assignedTo._id]);
                 fields.efficiency = parseFloat($scope.efficiencyData[review.assignedTo._id]);
                 count++;
@@ -1858,52 +1859,56 @@ app.controller('AdminFeedbackController', function ($scope, $http, toastr, $wind
 
             //making average
             $scope.credibilityData[review.assignedTo._id] = parseFloat($scope.credibilityData[review.assignedTo._id]) / count;
-            // fields.credibility = parseFloat($scope.credibilityData[review.assignedTo._id]);
-            // var url = '/api/peerassessment/' + $scope.course._id + '/peerreviews/' + review.peerReviewId._id + '/solution/' + $scope.solution._id + '/peer/' + review.assignedTo._id + '/addCredibilityMetric'
-
-            // var uploadParams = {
-            //     method: 'POST',
-            //     url: url,
-            //     fields: fields
-            // };
-
-            // $scope.upload = Upload.upload(
-            //     uploadParams
-            // )
-            //     .progress(function (evt) {
-            //         if (!evt.config.file)
-            //             return;
-            //         $scope.progress = parseInt(100.0 * evt.loaded / evt.total);
-            //     })
-            //     .success(function (data) {
-            //         getGrades();
-            //         DrawBarChartCredibility()
-            //         $scope.progress = 0;
-            //         if (data.result) {
-            //             toastr.success('Successfully Saved');
-            //         } else {
-            //             toastr.error(data.errors[0] || 'Failed');
-            //         }
-            //         $scope.isLoading = false;
-            //         // window.history.back();
-
-            //     })
-            //     .error(function (data) {
-            //         getGrades();
-            //         DrawBarChartCredibility()
-            //         toastr.error('Internal Server Error');
-            //         $scope.errors = data.errors;
-            //         $scope.progress = 0;
-            //         $scope.isLoading = false;
-
-            //     });
-
+            promises.push(saveCredibility(review,fields));
         });
-        setTimeout(function () {
-            $scope.$apply();
-        }, 300)
-        getGrades();
-        DrawBarChartCredibility()
+        Promise.all(promises).then(() => {
+         //   setTimeout(function () {
+                $scope.$apply();
+                getGrades();
+                DrawBarChartCredibility()
+        //    }, 300)
+        })
+    }
+
+    var saveCredibility = function (review,fields) {
+        return new Promise((resolve, reject) => {
+            fields.credibility = parseFloat($scope.credibilityData[review.assignedTo._id]);
+            var url = '/api/peerassessment/' + $scope.course._id + '/peerreviews/' + review.peerReviewId._id + '/solution/' + $scope.solution._id + '/peer/' + review.assignedTo._id + '/addCredibilityMetric'
+
+            var uploadParams = {
+                method: 'POST',
+                url: url,
+                fields: fields
+            };
+
+            $scope.upload = Upload.upload(
+                uploadParams
+            )
+                .progress(function (evt) {
+                    if (!evt.config.file)
+                        return;
+                    $scope.progress = parseInt(100.0 * evt.loaded / evt.total);
+                })
+                .success(function (data) {
+                    $scope.progress = 0;
+                    if (data.result) {
+                   //     toastr.success('Successfully Saved');
+                        resolve();
+                    } else {
+                    //    toastr.error(data.errors[0] || 'Failed');
+                        reject();
+                    }
+                    $scope.isLoading = false;
+                })
+                .error(function (data) {
+                    toastr.error('Internal Server Error');
+                    $scope.errors = data.errors;
+                    $scope.progress = 0;
+                    $scope.isLoading = false;
+                    reject();
+
+                });
+        });
     }
 
     var getGrades = function () {

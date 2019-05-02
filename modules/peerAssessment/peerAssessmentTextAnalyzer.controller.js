@@ -27,7 +27,7 @@ peerAssessmentTextAnalyzer.prototype.getExtractedTextByRake = function (error, d
             resultCon = str + "";
         }
         var obj = getFrequency(resultCon.replace(/,/g, " ").replace(/  +/g, ' '));
-
+        
         success(obj);
     } catch (err) {
         console.log("Rake Error: ", err.message);
@@ -136,12 +136,14 @@ peerAssessmentTextAnalyzer.prototype.getAnalyzedRewiewReport = function (error, 
             for (var i = 0; i < reviewsCount; i++) {
                 for (var j = 0; j < totalReviews; j++) {
                     var rubricReview = reviews[i].rubricReview;
-                    if (rubricReview.hasOwnProperty(reviews[i].peerReviewId.reviewSettings.rubrics[j]._id)) {
+                    if (rubricReview && rubricReview.hasOwnProperty(reviews[i].peerReviewId.reviewSettings.rubrics[j]._id)) {
                         if (!reviews[i].rubricNewReview) {
                             reviews[i].rubricNewReview = {};
                         }
                         reviews[i].rubricNewReview[reviews[i].peerReviewId.reviewSettings.rubrics[j]._id + ":" + reviews[i].peerReviewId.reviewSettings.rubrics[j].title] = reviews[i].rubricReview[reviews[i].peerReviewId.reviewSettings.rubrics[j]._id];
                         //console.log("reviews[i].peerReviewId.reviewSettings.rubrics[j].title);
+                    }else{
+                        success(reviews);
                     }
                 } //delete reviews[i].rubricReview[reviews[i].peerReviewId.reviewSettings.rubrics[k]._id];
             }

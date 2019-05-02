@@ -903,7 +903,7 @@ router.get('/peerassessment/textextraction/:text', helper.l2pAuth, helper.ensure
         if (!req.user) {
             return res.status(401).send('Unauthorized');
         }
-
+        
         var realText = req.params.text.replace(/\+/g, " ");
         var rs = new peerAssessmentTextAnalyzer();
 

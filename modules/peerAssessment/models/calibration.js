@@ -1,12 +1,8 @@
 var mongoose = require('mongoose');
 var appRoot = require('app-root-path');
-var userHelper = require(appRoot + '/modules/accounts/user.helper.js');
 
 var calibrationSchema = new mongoose.Schema({
-    title: {
-        type: String,
-        required: true
-    },
+    title: { type: String, required: true },
     calibrationDocuments: [{ type: String }],
     teacherComments: { type: String },
     teacherName: { type: String },
@@ -16,12 +12,12 @@ var calibrationSchema = new mongoose.Schema({
     dateAdded: { type: Date },
     dateUpdated: { type: Date }
 },
-{ usePushEach: true });
+    { usePushEach: true });
 
-calibrationSchema.pre('save', function(next){
+calibrationSchema.pre('save', function (next) {
     var now = new Date();
 
-    if ( !this.dateAdded ) {
+    if (!this.dateAdded) {
         this.dateAdded = now;
     }
 
